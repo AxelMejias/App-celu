@@ -3,6 +3,9 @@ import 'theme/app_theme.dart';
 import 'screens/home_screen.dart';
 import 'screens/create_alarm_screen.dart';
 import 'screens/select_game_screen.dart';
+import 'screens/alarm_ring_screen.dart';
+import 'screens/quiz_screen.dart';
+import 'screens/success_screen.dart';
 
 class App extends StatelessWidget {
   const App({super.key});
@@ -10,6 +13,9 @@ class App extends StatelessWidget {
   static const String home = '/';
   static const String createAlarm = '/create-alarm';
   static const String selectGame = '/select-game';
+  static const String alarmRing = '/alarm-ring';
+  static const String quiz = '/quiz';
+  static const String success = '/success';
 
   @override
   Widget build(BuildContext context) {
@@ -29,6 +35,9 @@ class App extends StatelessWidget {
         home: (context) => const HomeScreen(),
         createAlarm: (context) => const CreateAlarmScreen(),
         selectGame: (context) => const SelectGameScreen(),
+        alarmRing: (context) => const AlarmRingScreen(),
+        quiz: (context) => const QuizScreen(),
+        success: (context) => const SuccessScreen(),
       },
     );
   }

@@ -18,23 +18,38 @@ class HomeScreen extends StatelessWidget {
           ),
         ),
       ),
-      body: const Center(
-        child: Text(
-          'No hay alarmas todavía.\nPresioná + para crear una.',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: Colors.white54,
-            fontSize: 16,
-          ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text(
+              'No hay alarmas todavía.\nPresioná + para crear una.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.white54, fontSize: 16),
+            ),
+            const SizedBox(height: 32),
+            // TODO(C-07): remove this test button when real alarms are wired up
+            OutlinedButton.icon(
+              onPressed: () => Navigator.pushNamed(context, '/alarm-ring'),
+              icon: const Icon(Icons.play_arrow, color: Colors.deepPurpleAccent),
+              label: const Text(
+                'Probar flujo',
+                style: TextStyle(color: Colors.deepPurpleAccent),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Colors.deepPurpleAccent),
+              ),
+            ),
+          ],
         ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.push(
             context,
-          MaterialPageRoute(builder: (context) => const CreateAlarmScreen()),
+            MaterialPageRoute(builder: (context) => const CreateAlarmScreen()),
           );
-          },
+        },
         backgroundColor: Colors.deepPurple,
         child: const Icon(Icons.add, color: Colors.white),
       ),
