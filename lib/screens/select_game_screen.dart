@@ -40,7 +40,7 @@ class SelectGameScreen extends StatelessWidget {
               onTap: () => Navigator.pop(context, game['name']),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Color(game['color'] as int).withOpacity(0.2),
+                  color: Color(game['color'] as int).withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: Color(game['color'] as int),
