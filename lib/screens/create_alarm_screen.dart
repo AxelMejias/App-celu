@@ -78,7 +78,7 @@ class _CreateAlarmScreenState extends State<CreateAlarmScreen> {
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 64,
+                  fontSize: 72,
                   fontWeight: FontWeight.bold,
                 ),
               ),

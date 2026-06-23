@@ -24,5 +24,28 @@ void main() {
       // After navigation, SuccessScreen is gone
       expect(find.text('¡Correcto!'), findsNothing);
     });
+
+    testWidgets('content is visible after entry animation completes', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          initialRoute: '/success',
+          routes: {
+            '/': (_) => const Scaffold(body: Text('Home')),
+            '/success': (_) => const SuccessScreen(),
+          },
+        ),
+      );
+
+      // Let entry animation complete (500ms)
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump();
+
+      expect(find.text('¡Correcto!'), findsOneWidget);
+      expect(find.text('Alarma desactivada.\nVolviendo al inicio...'), findsOneWidget);
+
+      // Clear the pending 3-second auto-navigation timer
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pumpAndSettle();
+    });
   });
 }

@@ -21,6 +21,44 @@ class App extends StatelessWidget {
   static const String quiz = '/quiz';
   static const String success = '/success';
 
+  static Route<dynamic> _buildRoute(RouteSettings settings) {
+    Widget page;
+    switch (settings.name) {
+      case createAlarm:
+        page = const CreateAlarmScreen();
+      case selectGame:
+        page = const SelectGameScreen();
+      case alarmRing:
+        page = const AlarmRingScreen();
+      case quiz:
+        page = const QuizScreen();
+      case success:
+        page = const SuccessScreen();
+      default:
+        page = const HomeScreen();
+    }
+    return PageRouteBuilder(
+      settings: settings,
+      pageBuilder: (_, _, _) => page,
+      transitionDuration: const Duration(milliseconds: 250),
+      reverseTransitionDuration: const Duration(milliseconds: 200),
+      transitionsBuilder: (_, animation, _, child) {
+        final fadeTween = CurveTween(curve: Curves.easeInOut);
+        final slideTween = Tween(
+          begin: const Offset(0.04, 0.0),
+          end: Offset.zero,
+        ).chain(CurveTween(curve: Curves.easeInOut));
+        return FadeTransition(
+          opacity: animation.drive(fadeTween),
+          child: SlideTransition(
+            position: animation.drive(slideTween),
+            child: child,
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
@@ -38,14 +76,7 @@ class App extends StatelessWidget {
           ),
         ),
         initialRoute: home,
-        routes: {
-          home: (context) => const HomeScreen(),
-          createAlarm: (context) => const CreateAlarmScreen(),
-          selectGame: (context) => const SelectGameScreen(),
-          alarmRing: (context) => const AlarmRingScreen(),
-          quiz: (context) => const QuizScreen(),
-          success: (context) => const SuccessScreen(),
-        },
+        onGenerateRoute: _buildRoute,
       ),
     );
   }

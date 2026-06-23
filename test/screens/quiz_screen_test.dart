@@ -45,5 +45,46 @@ void main() {
       await tester.pump();
       expect(find.byType(AnswerButton), findsNWidgets(4));
     });
+
+    testWidgets('tapping any answer button disables all buttons', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: const QuizScreen(),
+          routes: {'/success': (_) => const Scaffold(body: Text('Success!'))},
+        ),
+      );
+      await tester.pump();
+
+      // All buttons enabled initially
+      final before = tester.widgetList<AnswerButton>(find.byType(AnswerButton)).toList();
+      expect(before.every((b) => b.onPressed != null), isTrue);
+
+      await tester.tap(find.byType(AnswerButton).first);
+      await tester.pump();
+
+      // All buttons disabled after tap (animation in progress)
+      final after = tester.widgetList<AnswerButton>(find.byType(AnswerButton)).toList();
+      expect(after.every((b) => b.onPressed == null), isTrue);
+    });
+
+    testWidgets('after pumpAndSettle following tap, quiz resets or navigates', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: const QuizScreen(),
+          routes: {'/success': (_) => const Scaffold(body: Text('Success!'))},
+        ),
+      );
+      await tester.pump();
+
+      await tester.tap(find.byType(AnswerButton).first);
+      await tester.pumpAndSettle();
+
+      // Either navigated to /success OR buttons re-enabled with new question
+      final onSuccess = find.text('Success!').evaluate().isNotEmpty;
+      final buttonsBack = find.byType(AnswerButton).evaluate().isNotEmpty &&
+          tester.widgetList<AnswerButton>(find.byType(AnswerButton))
+              .any((b) => b.onPressed != null);
+      expect(onSuccess || buttonsBack, isTrue);
+    });
   });
 }

@@ -27,7 +27,7 @@ class _AlarmRingScreenState extends State<AlarmRingScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.alarm, size: 80, color: gameColor),
+                Icon(Icons.alarm, size: 96, color: gameColor),
                 const SizedBox(height: 24),
                 Text(
                   '$hour:$minute',
@@ -57,7 +57,7 @@ class _AlarmRingScreenState extends State<AlarmRingScreen> {
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 18),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(16),
                       ),
                     ),
                     child: const Text(

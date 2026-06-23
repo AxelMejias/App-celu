@@ -1,3 +1,4 @@
+import 'dart:math' show sin, pi;
 import 'package:flutter/material.dart';
 import '../models/question.dart';
 import '../services/quiz_service.dart';
@@ -14,13 +15,54 @@ class QuizScreen extends StatefulWidget {
   State<QuizScreen> createState() => _QuizScreenState();
 }
 
-class _QuizScreenState extends State<QuizScreen> {
+class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   final _service = QuizService();
   late String _game;
   late Question _currentQuestion;
   int? _tappedIndex;
   _AnswerState _answerState = _AnswerState.idle;
   bool _initialized = false;
+
+  late AnimationController _bounceCtrl;
+  late AnimationController _shakeCtrl;
+  late Animation<double> _bounceAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _bounceCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _shakeCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _bounceAnim = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.12), weight: 50),
+      TweenSequenceItem(tween: Tween(begin: 1.12, end: 1.0), weight: 50),
+    ]).animate(_bounceCtrl);
+
+    _bounceCtrl.addStatusListener(_onBounceStatus);
+    _shakeCtrl.addStatusListener(_onShakeStatus);
+  }
+
+  void _onBounceStatus(AnimationStatus status) {
+    if (status == AnimationStatus.completed && mounted) {
+      Navigator.pushNamed(context, '/success');
+    }
+  }
+
+  void _onShakeStatus(AnimationStatus status) {
+    if (status == AnimationStatus.completed && mounted) {
+      setState(() {
+        _currentQuestion = _service.getRandomQuestion(_game);
+        _tappedIndex = null;
+        _answerState = _AnswerState.idle;
+      });
+      _shakeCtrl.reset();
+    }
+  }
 
   @override
   void didChangeDependencies() {
@@ -30,6 +72,13 @@ class _QuizScreenState extends State<QuizScreen> {
       _currentQuestion = _service.getRandomQuestion(_game);
       _initialized = true;
     }
+  }
+
+  @override
+  void dispose() {
+    _bounceCtrl.dispose();
+    _shakeCtrl.dispose();
+    super.dispose();
   }
 
   void _onAnswer(int index) {
@@ -42,19 +91,9 @@ class _QuizScreenState extends State<QuizScreen> {
     });
 
     if (correct) {
-      Future.delayed(const Duration(milliseconds: 600), () {
-        if (mounted) Navigator.pushNamed(context, '/success');
-      });
+      _bounceCtrl.forward(from: 0);
     } else {
-      Future.delayed(const Duration(seconds: 2), () {
-        if (mounted) {
-          setState(() {
-            _currentQuestion = _service.getRandomQuestion(_game);
-            _tappedIndex = null;
-            _answerState = _AnswerState.idle;
-          });
-        }
-      });
+      _shakeCtrl.forward(from: 0);
     }
   }
 
@@ -63,6 +102,29 @@ class _QuizScreenState extends State<QuizScreen> {
       return _answerState == _AnswerState.correct ? Colors.green : Colors.red;
     }
     return Colors.deepPurple;
+  }
+
+  Widget _buildAnswerButton(int i, bool buttonsEnabled) {
+    Widget button = AnswerButton(
+      text: _currentQuestion.options[i],
+      onPressed: buttonsEnabled ? () => _onAnswer(i) : null,
+      color: _buttonColor(i),
+    );
+
+    if (_answerState == _AnswerState.correct && i == _tappedIndex) {
+      button = ScaleTransition(scale: _bounceAnim, child: button);
+    } else if (_answerState == _AnswerState.incorrect && i == _tappedIndex) {
+      button = AnimatedBuilder(
+        animation: _shakeCtrl,
+        builder: (_, child) => Transform.translate(
+          offset: Offset(sin(_shakeCtrl.value * pi * 4) * 8.0, 0),
+          child: child,
+        ),
+        child: button,
+      );
+    }
+
+    return Padding(padding: const EdgeInsets.only(bottom: 14), child: button);
   }
 
   @override
@@ -98,14 +160,10 @@ class _QuizScreenState extends State<QuizScreen> {
                 textAlign: TextAlign.center,
               ),
               const Spacer(),
-              ...List.generate(question.options.length, (i) => Padding(
-                padding: const EdgeInsets.only(bottom: 14),
-                child: AnswerButton(
-                  text: question.options[i],
-                  onPressed: buttonsEnabled ? () => _onAnswer(i) : null,
-                  color: _buttonColor(i),
-                ),
-              )),
+              ...List.generate(
+                question.options.length,
+                (i) => _buildAnswerButton(i, buttonsEnabled),
+              ),
             ],
           ),
         ),

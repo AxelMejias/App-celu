@@ -70,7 +70,7 @@ class _AlarmTile extends StatelessWidget {
 
     return ListTile(
       tileColor: const Color(0xFF16213E),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       leading: CircleAvatar(
         backgroundColor: gameColor.withValues(alpha: 0.2),
         child: Text(gameIcon, style: const TextStyle(fontSize: 20)),
@@ -79,7 +79,7 @@ class _AlarmTile extends StatelessWidget {
         alarm.time.format(context),
         style: const TextStyle(
           color: Colors.white,
-          fontSize: 22,
+          fontSize: 24,
           fontWeight: FontWeight.bold,
         ),
       ),
