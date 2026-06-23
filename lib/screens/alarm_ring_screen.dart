@@ -11,6 +11,7 @@ class AlarmRingScreen extends StatefulWidget {
 class _AlarmRingScreenState extends State<AlarmRingScreen> {
   @override
   Widget build(BuildContext context) {
+    final game = ModalRoute.of(context)?.settings.arguments as String? ?? 'pokemon';
     final now = TimeOfDay.now();
     final hour = now.hour.toString().padLeft(2, '0');
     final minute = now.minute.toString().padLeft(2, '0');
@@ -48,7 +49,7 @@ class _AlarmRingScreenState extends State<AlarmRingScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () => Navigator.pushNamed(context, '/quiz'),
+                    onPressed: () => Navigator.pushNamed(context, '/quiz', arguments: game),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.deepPurple,
                       foregroundColor: Colors.white,

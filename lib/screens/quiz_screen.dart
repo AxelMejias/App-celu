@@ -1,25 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/question.dart';
+import '../services/quiz_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/answer_button.dart';
-
-// Hardcoded placeholder — replaced by QuizService.getQuestion(game) in C-08.
-const _questions = [
-  Question(
-    game: 'pokemon',
-    text: '¿Cuántos Pokémon hay en la primera generación?',
-    options: ['121', '151', '175', '100'],
-    correctIndex: 1,
-    difficulty: 'easy',
-  ),
-  Question(
-    game: 'pokemon',
-    text: '¿Qué tipo es efectivo contra tipo Dragón?',
-    options: ['Fuego', 'Agua', 'Hielo', 'Planta'],
-    correctIndex: 2,
-    difficulty: 'easy',
-  ),
-];
 
 enum _AnswerState { idle, correct, incorrect }
 
@@ -31,11 +14,22 @@ class QuizScreen extends StatefulWidget {
 }
 
 class _QuizScreenState extends State<QuizScreen> {
-  int _questionIndex = 0;
+  final _service = QuizService();
+  late String _game;
+  late Question _currentQuestion;
   int? _tappedIndex;
   _AnswerState _answerState = _AnswerState.idle;
+  bool _initialized = false;
 
-  Question get _currentQuestion => _questions[_questionIndex % _questions.length];
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      _game = ModalRoute.of(context)?.settings.arguments as String? ?? 'pokemon';
+      _currentQuestion = _service.getRandomQuestion(_game);
+      _initialized = true;
+    }
+  }
 
   void _onAnswer(int index) {
     if (_answerState != _AnswerState.idle) return;
@@ -54,7 +48,7 @@ class _QuizScreenState extends State<QuizScreen> {
       Future.delayed(const Duration(seconds: 2), () {
         if (mounted) {
           setState(() {
-            _questionIndex++;
+            _currentQuestion = _service.getRandomQuestion(_game);
             _tappedIndex = null;
             _answerState = _AnswerState.idle;
           });
