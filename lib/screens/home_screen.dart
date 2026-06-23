@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/alarm_provider.dart';
 import '../models/alarm.dart';
+import '../theme/game_themes.dart';
 import 'create_alarm_screen.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -63,14 +64,16 @@ class _AlarmTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.read<AlarmProvider>();
+    final theme = gameThemes[alarm.game];
+    final gameColor = theme?.primaryColor ?? Colors.deepPurple;
+    final gameIcon = theme?.icon ?? '🎮';
 
     return ListTile(
       tileColor: const Color(0xFF16213E),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      leading: Switch(
-        value: alarm.isActive,
-        activeThumbColor: Colors.deepPurpleAccent,
-        onChanged: (_) => provider.toggleAlarm(alarm.id),
+      leading: CircleAvatar(
+        backgroundColor: gameColor.withValues(alpha: 0.2),
+        child: Text(gameIcon, style: const TextStyle(fontSize: 20)),
       ),
       title: Text(
         alarm.time.format(context),
@@ -81,12 +84,22 @@ class _AlarmTile extends StatelessWidget {
         ),
       ),
       subtitle: Text(
-        alarm.game,
+        theme?.displayName ?? alarm.game,
         style: const TextStyle(color: Colors.white54),
       ),
-      trailing: IconButton(
-        icon: const Icon(Icons.delete_outline, color: Colors.white38),
-        onPressed: () => provider.deleteAlarm(alarm.id),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Switch(
+            value: alarm.isActive,
+            activeThumbColor: gameColor,
+            onChanged: (_) => provider.toggleAlarm(alarm.id),
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete_outline, color: Colors.white38),
+            onPressed: () => provider.deleteAlarm(alarm.id),
+          ),
+        ],
       ),
     );
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/alarm_provider.dart';
 import '../models/alarm.dart';
+import '../theme/game_themes.dart';
 import 'select_game_screen.dart';
 
 class CreateAlarmScreen extends StatefulWidget {
@@ -13,7 +14,7 @@ class CreateAlarmScreen extends StatefulWidget {
 
 class _CreateAlarmScreenState extends State<CreateAlarmScreen> {
   TimeOfDay _selectedTime = TimeOfDay.now();
-  String _selectedGame = 'Elegir juego';
+  String? _selectedGame;
 
   Future<void> _pickTime() async {
     final TimeOfDay? picked = await showTimePicker(
@@ -26,7 +27,7 @@ class _CreateAlarmScreenState extends State<CreateAlarmScreen> {
   }
 
   Future<void> _save() async {
-    final alarm = Alarm(time: _selectedTime, game: _selectedGame);
+    final alarm = Alarm(time: _selectedTime, game: _selectedGame!);
     await context.read<AlarmProvider>().addAlarm(alarm);
     if (mounted) Navigator.pop(context);
   }
@@ -39,6 +40,11 @@ class _CreateAlarmScreenState extends State<CreateAlarmScreen> {
     if (game != null) {
       setState(() => _selectedGame = game);
     }
+  }
+
+  String get _gameButtonLabel {
+    if (_selectedGame == null) return 'Elegir juego';
+    return gameThemes[_selectedGame]?.displayName ?? _selectedGame!;
   }
 
   @override
@@ -99,12 +105,14 @@ class _CreateAlarmScreenState extends State<CreateAlarmScreen> {
               child: ElevatedButton(
                 onPressed: _pickGame,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.deepPurple.shade800,
+                  backgroundColor: _selectedGame != null
+                      ? (gameThemes[_selectedGame]?.primaryColor ?? Colors.deepPurple.shade800)
+                      : Colors.deepPurple.shade800,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 child: Text(
-                  _selectedGame,
+                  _gameButtonLabel,
                   style: const TextStyle(color: Colors.white, fontSize: 16),
                 ),
               ),
@@ -113,7 +121,7 @@ class _CreateAlarmScreenState extends State<CreateAlarmScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: _selectedGame == 'Elegir juego' ? null : _save,
+                onPressed: _selectedGame == null ? null : _save,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.deepPurpleAccent,
                   disabledBackgroundColor: Colors.white12,

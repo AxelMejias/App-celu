@@ -46,7 +46,18 @@ void main() {
       await provider.addAlarm(alarm);
       await tester.pumpWidget(_buildScreen(provider));
       await tester.pump();
-      expect(find.text('pokemon'), findsOneWidget);
+      // Shows display name from gameThemes
+      expect(find.text('Pokémon'), findsOneWidget);
+    });
+
+    testWidgets('shows game icon in tile for pokemon alarm', (tester) async {
+      final provider = AlarmProvider();
+      await provider.addAlarm(
+        Alarm(time: const TimeOfDay(hour: 8, minute: 0), game: 'pokemon'),
+      );
+      await tester.pumpWidget(_buildScreen(provider));
+      await tester.pump();
+      expect(find.text('🔴'), findsOneWidget);
     });
   });
 }

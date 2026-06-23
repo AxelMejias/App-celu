@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../theme/game_themes.dart';
 
 class AlarmRingScreen extends StatefulWidget {
   const AlarmRingScreen({super.key});
@@ -12,6 +13,7 @@ class _AlarmRingScreenState extends State<AlarmRingScreen> {
   @override
   Widget build(BuildContext context) {
     final game = ModalRoute.of(context)?.settings.arguments as String? ?? 'pokemon';
+    final gameColor = gameThemes[game]?.primaryColor ?? Colors.deepPurpleAccent;
     final now = TimeOfDay.now();
     final hour = now.hour.toString().padLeft(2, '0');
     final minute = now.minute.toString().padLeft(2, '0');
@@ -25,7 +27,7 @@ class _AlarmRingScreenState extends State<AlarmRingScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.alarm, size: 80, color: Colors.deepPurpleAccent),
+                Icon(Icons.alarm, size: 80, color: gameColor),
                 const SizedBox(height: 24),
                 Text(
                   '$hour:$minute',
@@ -37,10 +39,10 @@ class _AlarmRingScreenState extends State<AlarmRingScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text(
+                Text(
                   '¡Alarma!',
                   style: TextStyle(
-                    color: Colors.deepPurpleAccent,
+                    color: gameColor,
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
                   ),
@@ -51,7 +53,7 @@ class _AlarmRingScreenState extends State<AlarmRingScreen> {
                   child: ElevatedButton(
                     onPressed: () => Navigator.pushNamed(context, '/quiz', arguments: game),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.deepPurple,
+                      backgroundColor: gameColor,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 18),
                       shape: RoundedRectangleBorder(

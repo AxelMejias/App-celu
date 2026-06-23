@@ -1,19 +1,13 @@
 import 'package:flutter/material.dart';
+import '../theme/game_themes.dart';
 
 class SelectGameScreen extends StatelessWidget {
   const SelectGameScreen({super.key});
 
-  static const List<Map<String, dynamic>> games = [
-    {'name': 'Pokémon', 'icon': '🔴', 'color': 0xFFE53935},
-    {'name': 'League of Legends', 'icon': '⚔️', 'color': 0xFF1565C0},
-    {'name': 'Terraria', 'icon': '⛏️', 'color': 0xFF2E7D32},
-    {'name': 'Valorant', 'icon': '🎯', 'color': 0xFFB71C1C},
-    {'name': 'Overwatch', 'icon': '🤖', 'color': 0xFFF57F17},
-    {'name': 'Warframe', 'icon': '🛸', 'color': 0xFF4A148C},
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final themes = gameThemes.values.toList();
+
     return Scaffold(
       backgroundColor: const Color(0xFF1A1A2E),
       appBar: AppBar(
@@ -33,28 +27,24 @@ class SelectGameScreen extends StatelessWidget {
             mainAxisSpacing: 16,
             childAspectRatio: 1.2,
           ),
-          itemCount: games.length,
+          itemCount: themes.length,
           itemBuilder: (context, index) {
-            final game = games[index];
+            final theme = themes[index];
             return GestureDetector(
-              onTap: () => Navigator.pop(context, game['name']),
+              onTap: () => Navigator.pop(context, theme.id),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Color(game['color'] as int).withValues(alpha: 0.2),
+                  color: theme.primaryColor.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: Color(game['color'] as int),
-                    width: 2,
-                  ),
+                  border: Border.all(color: theme.primaryColor, width: 2),
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(game['icon'] as String,
-                        style: const TextStyle(fontSize: 40)),
+                    Text(theme.icon, style: const TextStyle(fontSize: 40)),
                     const SizedBox(height: 8),
                     Text(
-                      game['name'] as String,
+                      theme.displayName,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         color: Colors.white,

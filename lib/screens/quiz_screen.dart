@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/question.dart';
 import '../services/quiz_service.dart';
 import '../theme/app_theme.dart';
+import '../theme/game_themes.dart';
 import '../widgets/answer_button.dart';
 
 enum _AnswerState { idle, correct, incorrect }
@@ -68,11 +69,12 @@ class _QuizScreenState extends State<QuizScreen> {
   Widget build(BuildContext context) {
     final question = _currentQuestion;
     final bool buttonsEnabled = _answerState == _AnswerState.idle;
+    final gameColor = gameThemes[_game]?.primaryColor;
 
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
-        backgroundColor: AppTheme.appBar,
+        backgroundColor: gameColor?.withValues(alpha: 0.85) ?? AppTheme.appBar,
         automaticallyImplyLeading: false,
         title: const Text(
           'Quiz',
