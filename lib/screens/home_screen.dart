@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/alarm_provider.dart';
+import '../models/alarm.dart';
 import 'create_alarm_screen.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -6,43 +9,18 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final alarms = context.watch<AlarmProvider>().alarms;
+
     return Scaffold(
       backgroundColor: const Color(0xFF1A1A2E),
       appBar: AppBar(
         backgroundColor: const Color(0xFF16213E),
         title: const Text(
           'LevelUp Alarm',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              'No hay alarmas todavía.\nPresioná + para crear una.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white54, fontSize: 16),
-            ),
-            const SizedBox(height: 32),
-            // TODO(C-07): remove this test button when real alarms are wired up
-            OutlinedButton.icon(
-              onPressed: () => Navigator.pushNamed(context, '/alarm-ring'),
-              icon: const Icon(Icons.play_arrow, color: Colors.deepPurpleAccent),
-              label: const Text(
-                'Probar flujo',
-                style: TextStyle(color: Colors.deepPurpleAccent),
-              ),
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Colors.deepPurpleAccent),
-              ),
-            ),
-          ],
-        ),
-      ),
+      body: alarms.isEmpty ? _buildEmptyState() : _buildAlarmList(context, alarms),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.push(
@@ -52,6 +30,63 @@ class HomeScreen extends StatelessWidget {
         },
         backgroundColor: Colors.deepPurple,
         child: const Icon(Icons.add, color: Colors.white),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return const Center(
+      child: Text(
+        'No hay alarmas todavía.\nPresioná + para crear una.',
+        textAlign: TextAlign.center,
+        style: TextStyle(color: Colors.white54, fontSize: 16),
+      ),
+    );
+  }
+
+  Widget _buildAlarmList(BuildContext context, List<Alarm> alarms) {
+    return ListView.builder(
+      itemCount: alarms.length,
+      itemBuilder: (context, index) {
+        final alarm = alarms[index];
+        return _AlarmTile(alarm: alarm);
+      },
+    );
+  }
+}
+
+class _AlarmTile extends StatelessWidget {
+  const _AlarmTile({required this.alarm});
+
+  final Alarm alarm;
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.read<AlarmProvider>();
+
+    return ListTile(
+      tileColor: const Color(0xFF16213E),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      leading: Switch(
+        value: alarm.isActive,
+        activeThumbColor: Colors.deepPurpleAccent,
+        onChanged: (_) => provider.toggleAlarm(alarm.id),
+      ),
+      title: Text(
+        alarm.time.format(context),
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 22,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      subtitle: Text(
+        alarm.game,
+        style: const TextStyle(color: Colors.white54),
+      ),
+      trailing: IconButton(
+        icon: const Icon(Icons.delete_outline, color: Colors.white38),
+        onPressed: () => provider.deleteAlarm(alarm.id),
       ),
     );
   }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'theme/app_theme.dart';
+import 'providers/alarm_provider.dart';
 import 'screens/home_screen.dart';
 import 'screens/create_alarm_screen.dart';
 import 'screens/select_game_screen.dart';
@@ -19,26 +21,29 @@ class App extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'LevelUp Alarm',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        brightness: Brightness.dark,
-        colorSchemeSeed: Colors.deepPurple,
-        scaffoldBackgroundColor: AppTheme.background,
-        appBarTheme: const AppBarTheme(
-          backgroundColor: AppTheme.appBar,
+    return ChangeNotifierProvider(
+      create: (_) => AlarmProvider(),
+      child: MaterialApp(
+        title: 'LevelUp Alarm',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          brightness: Brightness.dark,
+          colorSchemeSeed: Colors.deepPurple,
+          scaffoldBackgroundColor: AppTheme.background,
+          appBarTheme: const AppBarTheme(
+            backgroundColor: AppTheme.appBar,
+          ),
         ),
+        initialRoute: home,
+        routes: {
+          home: (context) => const HomeScreen(),
+          createAlarm: (context) => const CreateAlarmScreen(),
+          selectGame: (context) => const SelectGameScreen(),
+          alarmRing: (context) => const AlarmRingScreen(),
+          quiz: (context) => const QuizScreen(),
+          success: (context) => const SuccessScreen(),
+        },
       ),
-      initialRoute: home,
-      routes: {
-        home: (context) => const HomeScreen(),
-        createAlarm: (context) => const CreateAlarmScreen(),
-        selectGame: (context) => const SelectGameScreen(),
-        alarmRing: (context) => const AlarmRingScreen(),
-        quiz: (context) => const QuizScreen(),
-        success: (context) => const SuccessScreen(),
-      },
     );
   }
 }

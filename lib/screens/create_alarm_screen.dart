@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/alarm_provider.dart';
+import '../models/alarm.dart';
 import 'select_game_screen.dart';
 
 class CreateAlarmScreen extends StatefulWidget {
@@ -20,6 +23,12 @@ class _CreateAlarmScreenState extends State<CreateAlarmScreen> {
     if (picked != null) {
       setState(() => _selectedTime = picked);
     }
+  }
+
+  Future<void> _save() async {
+    final alarm = Alarm(time: _selectedTime, game: _selectedGame);
+    await context.read<AlarmProvider>().addAlarm(alarm);
+    if (mounted) Navigator.pop(context);
   }
 
   Future<void> _pickGame() async {
@@ -97,6 +106,23 @@ class _CreateAlarmScreenState extends State<CreateAlarmScreen> {
                 child: Text(
                   _selectedGame,
                   style: const TextStyle(color: Colors.white, fontSize: 16),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _selectedGame == 'Elegir juego' ? null : _save,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.deepPurpleAccent,
+                  disabledBackgroundColor: Colors.white12,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text(
+                  'Guardar',
+                  style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
