@@ -10,7 +10,9 @@ import 'screens/quiz_screen.dart';
 import 'screens/success_screen.dart';
 
 class App extends StatelessWidget {
-  const App({super.key});
+  const App({super.key, this.navigatorKey});
+
+  final GlobalKey<NavigatorState>? navigatorKey;
 
   static const String home = '/';
   static const String createAlarm = '/create-alarm';
@@ -24,6 +26,7 @@ class App extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (_) => AlarmProvider(),
       child: MaterialApp(
+        navigatorKey: navigatorKey,
         title: 'LevelUp Alarm',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
