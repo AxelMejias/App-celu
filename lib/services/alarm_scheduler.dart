@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -77,6 +78,7 @@ class AlarmScheduler {
   }
 
   static Future<void> scheduleAlarm(Alarm alarm) async {
+    if (!Platform.isAndroid) return;
     try {
       final now = DateTime.now();
       var scheduled = DateTime(
@@ -99,6 +101,7 @@ class AlarmScheduler {
   }
 
   static Future<void> cancelAlarm(String id) async {
+    if (!Platform.isAndroid) return;
     try {
       await AndroidAlarmManager.cancel(alarmId(id));
     } catch (_) {}
