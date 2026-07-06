@@ -26,6 +26,10 @@ class HomeScreen extends StatelessWidget {
             onPressed: () => Navigator.pushNamed(context, '/friends'),
           ),
           IconButton(
+            icon: const Icon(Icons.emoji_events, color: Colors.white),
+            onPressed: () => Navigator.pushNamed(context, '/challenges'),
+          ),
+          IconButton(
             icon: const Icon(Icons.person, color: Colors.white),
             onPressed: () => Navigator.pushNamed(context, '/profile'),
           ),

@@ -4,8 +4,11 @@ import 'theme/app_theme.dart';
 import 'models/user_summary.dart';
 import 'providers/alarm_provider.dart';
 import 'providers/auth_provider.dart';
+import 'providers/challenges_provider.dart';
 import 'providers/friends_provider.dart';
 import 'providers/profile_provider.dart';
+import 'screens/challenge_play_screen.dart';
+import 'screens/challenges_screen.dart';
 import 'screens/create_alarm_screen.dart';
 import 'screens/select_game_screen.dart';
 import 'screens/alarm_ring_screen.dart';
@@ -38,6 +41,8 @@ class App extends StatelessWidget {
   static const String profile = '/profile';
   static const String friends = '/friends';
   static const String friendProfile = '/friend-profile';
+  static const String challenges = '/challenges';
+  static const String challengePlay = '/challenge-play';
 
   static Route<dynamic> _buildRoute(RouteSettings settings) {
     Widget page;
@@ -62,6 +67,10 @@ class App extends StatelessWidget {
         page = const FriendsScreen();
       case friendProfile:
         page = FriendProfileScreen(friend: settings.arguments as UserSummary);
+      case challenges:
+        page = const ChallengesScreen();
+      case challengePlay:
+        page = ChallengePlayScreen(args: settings.arguments as ChallengePlayArgs);
       default:
         page = const AuthGate();
     }
@@ -114,6 +123,17 @@ class App extends StatelessWidget {
             // D-6): don't discard in-flight loads on unrelated rebuilds.
             if (previous != null && previous.uid == uid) return previous;
             return FriendsProvider(uid: uid);
+          },
+        ),
+        ChangeNotifierProxyProvider<AuthProvider, ChallengesProvider>(
+          create: (_) => ChallengesProvider(uid: null),
+          update: (_, auth, previous) {
+            final uid = auth.currentUser?.uid;
+            // Same rebuild guard as ProfileProvider/FriendsProvider above
+            // (see C-15 design D-8): don't discard in-flight loads on
+            // unrelated rebuilds.
+            if (previous != null && previous.uid == uid) return previous;
+            return ChallengesProvider(uid: uid);
           },
         ),
       ],

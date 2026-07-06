@@ -45,6 +45,15 @@ void main() {
     });
   });
 
+  group('HomeScreen — challenges entry point', () {
+    testWidgets('shows a challenges icon (Icons.emoji_events) in the AppBar', (tester) async {
+      final provider = AlarmProvider();
+      await tester.pumpWidget(_buildScreen(provider));
+      await tester.pump();
+      expect(find.byIcon(Icons.emoji_events), findsOneWidget);
+    });
+  });
+
   group('HomeScreen — alarm list', () {
     testWidgets('shows alarm tile with time and game when one alarm exists', (tester) async {
       final provider = AlarmProvider();
