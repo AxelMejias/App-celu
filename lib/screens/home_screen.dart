@@ -20,6 +20,12 @@ class HomeScreen extends StatelessWidget {
           'LevelUp Alarm',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.person, color: Colors.white),
+            onPressed: () => Navigator.pushNamed(context, '/profile'),
+          ),
+        ],
       ),
       body: alarms.isEmpty ? _buildEmptyState() : _buildAlarmList(context, alarms),
       floatingActionButton: FloatingActionButton(

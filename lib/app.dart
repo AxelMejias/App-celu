@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'theme/app_theme.dart';
 import 'providers/alarm_provider.dart';
 import 'providers/auth_provider.dart';
+import 'providers/profile_provider.dart';
 import 'screens/create_alarm_screen.dart';
 import 'screens/select_game_screen.dart';
 import 'screens/alarm_ring_screen.dart';
@@ -10,6 +11,7 @@ import 'screens/quiz_screen.dart';
 import 'screens/success_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
+import 'screens/profile_screen.dart';
 import 'widgets/auth_gate.dart';
 
 class App extends StatelessWidget {
@@ -29,6 +31,7 @@ class App extends StatelessWidget {
   static const String success = '/success';
   static const String login = '/login';
   static const String register = '/register';
+  static const String profile = '/profile';
 
   static Route<dynamic> _buildRoute(RouteSettings settings) {
     Widget page;
@@ -47,6 +50,8 @@ class App extends StatelessWidget {
         page = const LoginScreen();
       case register:
         page = const RegisterScreen();
+      case profile:
+        page = const ProfileScreen();
       default:
         page = const AuthGate();
     }
@@ -79,6 +84,17 @@ class App extends StatelessWidget {
         ChangeNotifierProvider<AlarmProvider>(create: (_) => AlarmProvider()),
         ChangeNotifierProvider<AuthProvider>(
           create: (_) => authProviderOverride ?? AuthProvider(),
+        ),
+        ChangeNotifierProxyProvider<AuthProvider, ProfileProvider>(
+          create: (_) => ProfileProvider(uid: null),
+          update: (_, auth, previous) {
+            final uid = auth.currentUser?.uid;
+            // Reuse the existing ProfileProvider unless the signed-in user
+            // actually changed, so an in-flight `load()`/optimistic update
+            // isn't discarded on every unrelated AuthProvider rebuild.
+            if (previous != null && previous.uid == uid) return previous;
+            return ProfileProvider(uid: uid);
+          },
         ),
       ],
       child: MaterialApp(

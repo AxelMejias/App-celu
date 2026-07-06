@@ -1,6 +1,8 @@
 import 'dart:math' show sin, pi;
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/question.dart';
+import '../providers/profile_provider.dart';
 import '../services/quiz_service.dart';
 import '../theme/app_theme.dart';
 import '../theme/game_themes.dart';
@@ -89,6 +91,11 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       _tappedIndex = index;
       _answerState = correct ? _AnswerState.correct : _AnswerState.incorrect;
     });
+
+    // Fire-and-forget: reporting the result must never block or delay the
+    // feedback animation. `ProfileProvider.recordAnswer` is a safe no-op
+    // when there is no authenticated user (see C-13 design D-5).
+    context.read<ProfileProvider>().recordAnswer(_game, correct);
 
     if (correct) {
       _bounceCtrl.forward(from: 0);
