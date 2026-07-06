@@ -2,17 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'theme/app_theme.dart';
 import 'providers/alarm_provider.dart';
-import 'screens/home_screen.dart';
+import 'providers/auth_provider.dart';
 import 'screens/create_alarm_screen.dart';
 import 'screens/select_game_screen.dart';
 import 'screens/alarm_ring_screen.dart';
 import 'screens/quiz_screen.dart';
 import 'screens/success_screen.dart';
+import 'screens/login_screen.dart';
+import 'screens/register_screen.dart';
+import 'widgets/auth_gate.dart';
 
 class App extends StatelessWidget {
-  const App({super.key, this.navigatorKey});
+  const App({super.key, this.navigatorKey, this.authProviderOverride});
 
   final GlobalKey<NavigatorState>? navigatorKey;
+
+  /// Test-only hook: lets widget tests inject a fake [AuthProvider] so they
+  /// don't need a real Firebase connection just to render the app's root.
+  final AuthProvider? authProviderOverride;
 
   static const String home = '/';
   static const String createAlarm = '/create-alarm';
@@ -20,6 +27,8 @@ class App extends StatelessWidget {
   static const String alarmRing = '/alarm-ring';
   static const String quiz = '/quiz';
   static const String success = '/success';
+  static const String login = '/login';
+  static const String register = '/register';
 
   static Route<dynamic> _buildRoute(RouteSettings settings) {
     Widget page;
@@ -34,8 +43,12 @@ class App extends StatelessWidget {
         page = const QuizScreen();
       case success:
         page = const SuccessScreen();
+      case login:
+        page = const LoginScreen();
+      case register:
+        page = const RegisterScreen();
       default:
-        page = const HomeScreen();
+        page = const AuthGate();
     }
     return PageRouteBuilder(
       settings: settings,
@@ -61,8 +74,13 @@ class App extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => AlarmProvider(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider<AlarmProvider>(create: (_) => AlarmProvider()),
+        ChangeNotifierProvider<AuthProvider>(
+          create: (_) => authProviderOverride ?? AuthProvider(),
+        ),
+      ],
       child: MaterialApp(
         navigatorKey: navigatorKey,
         title: 'LevelUp Alarm',

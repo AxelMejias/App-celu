@@ -5,6 +5,8 @@ import 'package:levelup_alarm/app.dart';
 import 'package:levelup_alarm/screens/create_alarm_screen.dart';
 import 'package:levelup_alarm/screens/alarm_ring_screen.dart';
 
+import 'helpers/fake_signed_in_auth_provider.dart';
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -14,7 +16,7 @@ void main() {
 
   group('App transitions — route resolution', () {
     testWidgets('navigating to /create-alarm renders CreateAlarmScreen', (tester) async {
-      await tester.pumpWidget(const App());
+      await tester.pumpWidget(App(authProviderOverride: FakeSignedInAuthProvider()));
       await tester.pump();
 
       final navigator = tester.state<NavigatorState>(find.byType(Navigator).first);
@@ -25,7 +27,7 @@ void main() {
     });
 
     testWidgets('navigating to /alarm-ring renders AlarmRingScreen', (tester) async {
-      await tester.pumpWidget(const App());
+      await tester.pumpWidget(App(authProviderOverride: FakeSignedInAuthProvider()));
       await tester.pump();
 
       final navigator = tester.state<NavigatorState>(find.byType(Navigator).first);
