@@ -36,6 +36,15 @@ void main() {
     });
   });
 
+  group('HomeScreen — friends entry point', () {
+    testWidgets('shows a friends icon in the AppBar', (tester) async {
+      final provider = AlarmProvider();
+      await tester.pumpWidget(_buildScreen(provider));
+      await tester.pump();
+      expect(find.byIcon(Icons.people), findsOneWidget);
+    });
+  });
+
   group('HomeScreen — alarm list', () {
     testWidgets('shows alarm tile with time and game when one alarm exists', (tester) async {
       final provider = AlarmProvider();

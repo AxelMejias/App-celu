@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'theme/app_theme.dart';
+import 'models/user_summary.dart';
 import 'providers/alarm_provider.dart';
 import 'providers/auth_provider.dart';
+import 'providers/friends_provider.dart';
 import 'providers/profile_provider.dart';
 import 'screens/create_alarm_screen.dart';
 import 'screens/select_game_screen.dart';
@@ -12,6 +14,8 @@ import 'screens/success_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/profile_screen.dart';
+import 'screens/friends_screen.dart';
+import 'screens/friend_profile_screen.dart';
 import 'widgets/auth_gate.dart';
 
 class App extends StatelessWidget {
@@ -32,6 +36,8 @@ class App extends StatelessWidget {
   static const String login = '/login';
   static const String register = '/register';
   static const String profile = '/profile';
+  static const String friends = '/friends';
+  static const String friendProfile = '/friend-profile';
 
   static Route<dynamic> _buildRoute(RouteSettings settings) {
     Widget page;
@@ -52,6 +58,10 @@ class App extends StatelessWidget {
         page = const RegisterScreen();
       case profile:
         page = const ProfileScreen();
+      case friends:
+        page = const FriendsScreen();
+      case friendProfile:
+        page = FriendProfileScreen(friend: settings.arguments as UserSummary);
       default:
         page = const AuthGate();
     }
@@ -94,6 +104,16 @@ class App extends StatelessWidget {
             // isn't discarded on every unrelated AuthProvider rebuild.
             if (previous != null && previous.uid == uid) return previous;
             return ProfileProvider(uid: uid);
+          },
+        ),
+        ChangeNotifierProxyProvider<AuthProvider, FriendsProvider>(
+          create: (_) => FriendsProvider(uid: null),
+          update: (_, auth, previous) {
+            final uid = auth.currentUser?.uid;
+            // Same rebuild guard as ProfileProvider above (see C-14 design
+            // D-6): don't discard in-flight loads on unrelated rebuilds.
+            if (previous != null && previous.uid == uid) return previous;
+            return FriendsProvider(uid: uid);
           },
         ),
       ],
