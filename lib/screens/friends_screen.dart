@@ -47,7 +47,15 @@ class _FriendsScreenState extends State<FriendsScreen> {
           children: [
             _buildSearchField(context),
             const SizedBox(height: 8),
-            ...provider.searchResults.map((user) => _buildSearchResultTile(context, user)),
+            if (provider.errorMessage != null) ...[
+              Text(
+                provider.errorMessage!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.redAccent),
+              ),
+              const SizedBox(height: 8),
+            ],
+            ...provider.searchResults.map((user) => _buildSearchResultTile(context, user, provider)),
             const SizedBox(height: 24),
             if (provider.incomingRequests.isNotEmpty) ...[
               const Text(
@@ -87,13 +95,14 @@ class _FriendsScreenState extends State<FriendsScreen> {
     );
   }
 
-  Widget _buildSearchResultTile(BuildContext context, UserSummary user) {
+  Widget _buildSearchResultTile(BuildContext context, UserSummary user, FriendsProvider provider) {
+    final alreadySent = provider.sentRequestUids.contains(user.uid);
     return ListTile(
       tileColor: AppTheme.appBar,
       title: Text(user.username, style: const TextStyle(color: Colors.white)),
       trailing: TextButton(
-        onPressed: () => context.read<FriendsProvider>().sendRequest(user.uid),
-        child: const Text('Agregar'),
+        onPressed: alreadySent ? null : () => context.read<FriendsProvider>().sendRequest(user.uid),
+        child: Text(alreadySent ? 'Enviada' : 'Agregar'),
       ),
     );
   }

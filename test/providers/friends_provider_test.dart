@@ -47,6 +47,41 @@ void main() {
     });
   });
 
+  group('FriendsProvider.sendRequest', () {
+    test('en éxito registra el uid en sentRequestUids y notifica', () async {
+      when(() => mockService.loadUsername('u1')).thenAnswer((_) async => 'ash');
+      when(() => mockService.sendRequest(
+            fromUid: 'u1',
+            fromUsername: 'ash',
+            toUid: 'u3',
+          )).thenAnswer((_) async {});
+      final provider = FriendsProvider(friendsService: mockService, uid: 'u1');
+      var notified = false;
+      provider.addListener(() => notified = true);
+
+      await provider.sendRequest('u3');
+
+      expect(provider.sentRequestUids, contains('u3'));
+      expect(notified, isTrue);
+      expect(provider.errorMessage, isNull);
+    });
+
+    test('en fallo setea errorMessage y no marca el uid como enviado', () async {
+      when(() => mockService.loadUsername('u1')).thenAnswer((_) async => 'ash');
+      when(() => mockService.sendRequest(
+            fromUid: any(named: 'fromUid'),
+            fromUsername: any(named: 'fromUsername'),
+            toUid: any(named: 'toUid'),
+          )).thenThrow(Exception('boom'));
+      final provider = FriendsProvider(friendsService: mockService, uid: 'u1');
+
+      await provider.sendRequest('u3');
+
+      expect(provider.sentRequestUids, isNot(contains('u3')));
+      expect(provider.errorMessage, isNotNull);
+    });
+  });
+
   group('FriendsProvider.loadIncomingRequests', () {
     test('popula incomingRequests', () async {
       when(() => mockService.loadIncomingRequests('u1')).thenAnswer(

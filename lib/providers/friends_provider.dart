@@ -22,6 +22,7 @@ class FriendsProvider extends ChangeNotifier {
   List<UserSummary> _friends = [];
   List<FriendRequest> _incomingRequests = [];
   List<UserSummary> _searchResults = [];
+  final Set<String> _sentRequestUids = {};
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -33,6 +34,10 @@ class FriendsProvider extends ChangeNotifier {
   List<UserSummary> get friends => _friends;
   List<FriendRequest> get incomingRequests => _incomingRequests;
   List<UserSummary> get searchResults => _searchResults;
+
+  /// Uids a los que ya se les envió una solicitud en esta sesión — la UI los
+  /// usa para dar feedback inmediato ("Enviada") sobre el resultado del tap.
+  Set<String> get sentRequestUids => _sentRequestUids;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
@@ -90,6 +95,7 @@ class FriendsProvider extends ChangeNotifier {
     if (currentUid == null) return;
     if (targetUid == currentUid) return;
 
+    _errorMessage = null;
     try {
       final username = await _myUsername(currentUid);
       await _friendsService.sendRequest(
@@ -97,6 +103,8 @@ class FriendsProvider extends ChangeNotifier {
         fromUsername: username,
         toUid: targetUid,
       );
+      _sentRequestUids.add(targetUid);
+      notifyListeners();
     } catch (e) {
       _errorMessage = 'No se pudo enviar la solicitud. Intentá de nuevo';
       notifyListeners();

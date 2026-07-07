@@ -88,6 +88,32 @@ void main() {
 
       verify(() => mockService.sendRequest(fromUid: 'u1', fromUsername: 'ash', toUid: 'u9'))
           .called(1);
+
+      // Feedback on success: the button must switch to a disabled "Enviada".
+      expect(find.text('Agregar'), findsNothing);
+      expect(find.text('Enviada'), findsOneWidget);
+    });
+
+    testWidgets('si el envío falla se muestra el errorMessage del provider', (tester) async {
+      when(() => mockService.searchUsers(any(), excludeUid: any(named: 'excludeUid')))
+          .thenAnswer((_) async => [const UserSummary(uid: 'u9', username: 'brock')]);
+      when(() => mockService.loadUsername('u1')).thenAnswer((_) async => 'ash');
+      when(() => mockService.sendRequest(
+            fromUid: any(named: 'fromUid'),
+            fromUsername: any(named: 'fromUsername'),
+            toUid: any(named: 'toUid'),
+          )).thenThrow(Exception('boom'));
+      final provider = FriendsProvider(friendsService: mockService, uid: 'u1');
+
+      await tester.pumpWidget(_buildScreen(provider));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'brock');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Agregar'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('No se pudo enviar la solicitud. Intentá de nuevo'), findsOneWidget);
     });
   });
 
