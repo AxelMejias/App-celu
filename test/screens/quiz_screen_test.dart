@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:levelup_alarm/data/all_questions.dart';
+import 'package:levelup_alarm/models/question.dart';
 import 'package:levelup_alarm/providers/profile_provider.dart';
 import 'package:levelup_alarm/screens/quiz_screen.dart';
 import 'package:levelup_alarm/services/profile_service.dart';
@@ -120,89 +122,67 @@ void main() {
 
     testWidgets('respuesta correcta llama ProfileProvider.recordAnswer(game, true)',
         (tester) async {
-      // Retries with fresh widgets (random questions) until tapping the
-      // first AnswerButton happens to be the correct one.
-      var found = false;
-      for (var attempt = 0; attempt < 15 && !found; attempt++) {
-        final mockProfileProvider = MockProfileProvider();
-        when(() => mockProfileProvider.recordAnswer(any(), any())).thenAnswer((_) async {});
+      final mockProfileProvider = MockProfileProvider();
+      when(() => mockProfileProvider.recordAnswer(any(), any())).thenAnswer((_) async {});
 
-        // Unmount first: pumping a matching MaterialApp/QuizScreen shape
-        // directly would let Flutter's element diffing reuse the previous
-        // `_QuizScreenState` (with `_answerState` already non-idle from the
-        // prior tap), silently making `_onAnswer` a no-op on this attempt.
-        await tester.pumpWidget(const SizedBox());
-        await tester.pumpWidget(
-          _wrap(
-            MaterialApp(
-              home: const QuizScreen(),
-              routes: {'/success': (_) => const Scaffold(body: Text('Success!'))},
-            ),
-            profileProvider: mockProfileProvider,
+      await tester.pumpWidget(
+        _wrap(
+          MaterialApp(
+            home: const QuizScreen(),
+            routes: {'/success': (_) => const Scaffold(body: Text('Success!'))},
           ),
-        );
-        await tester.pump();
+          profileProvider: mockProfileProvider,
+        ),
+      );
+      await tester.pump();
 
-        await tester.tap(find.byType(AnswerButton).first);
-        // A single pump is enough: `_onAnswer` calls `recordAnswer`
-        // synchronously before kicking off the feedback animation, so there
-        // is no need to let bounce/shake/navigation finish for this check.
-        await tester.pump();
+      // The question is random, but the bank tells us its correct option —
+      // tap exactly that AnswerButton (deterministic, no retry lottery).
+      final question = _currentPokemonQuestion(tester);
+      await tester.tap(
+        find.widgetWithText(AnswerButton, question.options[question.correctIndex]),
+      );
+      // A single pump is enough: `_onAnswer` calls `recordAnswer`
+      // synchronously before kicking off the feedback animation.
+      await tester.pump();
 
-        final captured =
-            verify(() => mockProfileProvider.recordAnswer(captureAny(), captureAny())).captured;
-        final game = captured[captured.length - 2] as String;
-        final correct = captured.last as bool;
-
-        if (correct) {
-          found = true;
-          expect(game, 'pokemon');
-        }
-      }
-      expect(found, isTrue, reason: 'Expected at least one attempt to tap the correct answer');
+      verify(() => mockProfileProvider.recordAnswer('pokemon', true)).called(1);
     });
 
     testWidgets('respuesta incorrecta llama recordAnswer(game, false)', (tester) async {
-      // Retries with fresh widgets (random questions) until tapping the
-      // first AnswerButton happens to be a wrong one.
-      var found = false;
-      for (var attempt = 0; attempt < 15 && !found; attempt++) {
-        final mockProfileProvider = MockProfileProvider();
-        when(() => mockProfileProvider.recordAnswer(any(), any())).thenAnswer((_) async {});
+      final mockProfileProvider = MockProfileProvider();
+      when(() => mockProfileProvider.recordAnswer(any(), any())).thenAnswer((_) async {});
 
-        // Unmount first: pumping a matching MaterialApp/QuizScreen shape
-        // directly would let Flutter's element diffing reuse the previous
-        // `_QuizScreenState` (with `_answerState` already non-idle from the
-        // prior tap), silently making `_onAnswer` a no-op on this attempt.
-        await tester.pumpWidget(const SizedBox());
-        await tester.pumpWidget(
-          _wrap(
-            MaterialApp(
-              home: const QuizScreen(),
-              routes: {'/success': (_) => const Scaffold(body: Text('Success!'))},
-            ),
-            profileProvider: mockProfileProvider,
+      await tester.pumpWidget(
+        _wrap(
+          MaterialApp(
+            home: const QuizScreen(),
+            routes: {'/success': (_) => const Scaffold(body: Text('Success!'))},
           ),
-        );
-        await tester.pump();
+          profileProvider: mockProfileProvider,
+        ),
+      );
+      await tester.pump();
 
-        await tester.tap(find.byType(AnswerButton).first);
-        // A single pump is enough: `_onAnswer` calls `recordAnswer`
-        // synchronously before kicking off the feedback animation, so there
-        // is no need to let bounce/shake/navigation finish for this check.
-        await tester.pump();
+      // Tap any option that is NOT the correct one (deterministic).
+      final question = _currentPokemonQuestion(tester);
+      final wrongOption = question.options[(question.correctIndex + 1) % question.options.length];
+      await tester.tap(find.widgetWithText(AnswerButton, wrongOption));
+      await tester.pump();
 
-        final captured =
-            verify(() => mockProfileProvider.recordAnswer(captureAny(), captureAny())).captured;
-        final game = captured[captured.length - 2] as String;
-        final correct = captured.last as bool;
-
-        if (!correct) {
-          found = true;
-          expect(game, 'pokemon');
-        }
-      }
-      expect(found, isTrue, reason: 'Expected at least one attempt to tap a wrong answer');
+      verify(() => mockProfileProvider.recordAnswer('pokemon', false)).called(1);
     });
   });
+}
+
+/// Looks up which pokemon question from the bank is currently on screen, so
+/// tests can tap the exact correct/incorrect option instead of retrying
+/// against the random question draw.
+Question _currentPokemonQuestion(WidgetTester tester) {
+  final visibleTexts = tester
+      .widgetList<Text>(find.byType(Text))
+      .map((t) => t.data)
+      .whereType<String>()
+      .toSet();
+  return questionsByGame['pokemon']!.firstWhere((q) => visibleTexts.contains(q.text));
 }
