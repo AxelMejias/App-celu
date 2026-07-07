@@ -27,13 +27,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-  void _submit(AuthProvider auth) {
+  Future<void> _submit(AuthProvider auth) async {
     if (_formKey.currentState?.validate() != true) return;
-    auth.register(
+    final navigator = Navigator.of(context);
+    await auth.register(
       _emailController.text.trim(),
       _passwordController.text,
       _usernameController.text.trim(),
     );
+    if (!mounted) return;
+    // On success the session is live and AuthGate (the root route) already
+    // shows HomeScreen underneath — pop this pushed route to reveal it.
+    if (auth.errorMessage == null) {
+      navigator.popUntil((route) => route.isFirst);
+    }
   }
 
   InputDecoration _decoration(String label) {

@@ -189,5 +189,42 @@ void main() {
 
       expect(fakeAuth.signOutCalled, isTrue);
     });
+
+    testWidgets('tras cerrar sesión vuelve a la ruta raíz (AuthGate)', (tester) async {
+      when(() => mockService.loadProfile('uid-1')).thenAnswer(
+        (_) async => UserProfile(username: 'trainer', email: 'trainer@example.com', stats: {}),
+      );
+      final provider = ProfileProvider(profileService: mockService, uid: 'uid-1');
+      final navKey = GlobalKey<NavigatorState>();
+
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<ProfileProvider>.value(value: provider),
+            ChangeNotifierProvider<AuthProvider>.value(value: fakeAuth),
+          ],
+          child: MaterialApp(
+            navigatorKey: navKey,
+            home: const Scaffold(body: Text('ROOT')),
+          ),
+        ),
+      );
+      navKey.currentState!.push(
+        MaterialPageRoute<void>(builder: (_) => const ProfileScreen()),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.dragUntilVisible(
+        find.byIcon(Icons.logout),
+        find.byType(Scrollable),
+        const Offset(0, -300),
+      );
+      await tester.tap(find.byIcon(Icons.logout));
+      await tester.pumpAndSettle();
+
+      // The pushed ProfileScreen must pop so AuthGate (root) can show LoginScreen.
+      expect(find.text('ROOT'), findsOneWidget);
+      expect(find.byType(ProfileScreen), findsNothing);
+    });
   });
 }

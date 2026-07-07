@@ -61,7 +61,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return SizedBox(
       width: double.infinity,
       child: OutlinedButton.icon(
-        onPressed: () => context.read<AuthProvider>().signOut(),
+        onPressed: () async {
+          final auth = context.read<AuthProvider>();
+          final navigator = Navigator.of(context);
+          await auth.signOut();
+          // AuthGate (root) now shows LoginScreen — pop this route to reveal it.
+          navigator.popUntil((route) => route.isFirst);
+        },
         icon: const Icon(Icons.logout, color: Colors.white70),
         label: const Text('Cerrar sesión', style: TextStyle(color: Colors.white70)),
         style: OutlinedButton.styleFrom(
