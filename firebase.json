@@ -1,1 +1,24 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"levelup-alarm","appId":"1:205744773134:android:9ecfed8f2429fceda7045f","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"levelup-alarm","configurations":{"android":"1:205744773134:android:9ecfed8f2429fceda7045f"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "levelup-alarm",
+          "appId": "1:205744773134:android:9ecfed8f2429fceda7045f",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "levelup-alarm",
+          "configurations": {
+            "android": "1:205744773134:android:9ecfed8f2429fceda7045f"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  }
+}

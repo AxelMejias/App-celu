@@ -1,0 +1,47 @@
+rules_version = '2';
+
+// LevelUp Alarm — reglas mínimas de la fase social (C-12…C-15).
+// Todo requiere sesión autenticada; escrituras acotadas a lo que cada
+// flujo realmente hace (ver FriendsService/ProfileService/ChallengeService).
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Perfiles: cualquier usuario autenticado puede leer (búsqueda por
+    // username, perfil de amigos); solo el dueño escribe su documento.
+    match /users/{uid} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == uid;
+
+      // Amistades: al aceptar, el aceptante escribe en AMBAS subcolecciones
+      // (la suya y la del emisor), por eso el dueño o la contraparte pueden
+      // crear/borrar el vínculo que los involucra.
+      match /friends/{friendUid} {
+        allow read: if request.auth != null;
+        allow write: if request.auth != null
+          && (request.auth.uid == uid || request.auth.uid == friendUid);
+      }
+    }
+
+    // Solicitudes de amistad: el emisor crea la suya; emisor o receptor
+    // pueden leerla y borrarla (aceptar/rechazar).
+    match /friendRequests/{requestId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.fromUid == request.auth.uid;
+      allow delete: if request.auth != null
+        && (resource.data.fromUid == request.auth.uid
+            || resource.data.toUid == request.auth.uid);
+    }
+
+    // Desafíos: los crea el retador; solo los dos participantes los leen
+    // y actualizan (responder cierra el desafío con un update).
+    match /challenges/{challengeId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.fromUid == request.auth.uid;
+      allow update: if request.auth != null
+        && (resource.data.fromUid == request.auth.uid
+            || resource.data.toUid == request.auth.uid);
+    }
+  }
+}
