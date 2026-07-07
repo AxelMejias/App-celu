@@ -124,6 +124,10 @@ class AlarmScheduler {
         scheduled,
         alarmId(alarm.id),
         alarmCallback,
+        // alarmClock usa setAlarmClock(): exento de Doze. Con exact/wakeup
+        // solos (setExact) Android DIFIERE la alarma cuando la pantalla está
+        // bloqueada y el dispositivo dozea — sonaba recién al despertarlo.
+        alarmClock: true,
         wakeup: true,
         exact: true,
         rescheduleOnReboot: true,
