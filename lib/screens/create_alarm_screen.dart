@@ -6,15 +6,23 @@ import '../theme/game_themes.dart';
 import 'select_game_screen.dart';
 
 class CreateAlarmScreen extends StatefulWidget {
-  const CreateAlarmScreen({super.key});
+  /// When non-null, the screen opens in edit mode: the form is pre-filled
+  /// from [existing] and saving updates that alarm in place (same id)
+  /// instead of creating a new one.
+  const CreateAlarmScreen({super.key, this.existing});
+
+  final Alarm? existing;
 
   @override
   State<CreateAlarmScreen> createState() => _CreateAlarmScreenState();
 }
 
 class _CreateAlarmScreenState extends State<CreateAlarmScreen> {
-  TimeOfDay _selectedTime = TimeOfDay.now();
-  String? _selectedGame;
+  late TimeOfDay _selectedTime =
+      widget.existing?.time ?? TimeOfDay.now();
+  late String? _selectedGame = widget.existing?.game;
+
+  bool get _isEditing => widget.existing != null;
 
   Future<void> _pickTime() async {
     final TimeOfDay? picked = await showTimePicker(
@@ -27,8 +35,19 @@ class _CreateAlarmScreenState extends State<CreateAlarmScreen> {
   }
 
   Future<void> _save() async {
-    final alarm = Alarm(time: _selectedTime, game: _selectedGame!);
-    await context.read<AlarmProvider>().addAlarm(alarm);
+    final provider = context.read<AlarmProvider>();
+    if (_isEditing) {
+      final alarm = Alarm(
+        id: widget.existing!.id,
+        time: _selectedTime,
+        game: _selectedGame!,
+        isActive: widget.existing!.isActive,
+      );
+      await provider.updateAlarm(alarm);
+    } else {
+      final alarm = Alarm(time: _selectedTime, game: _selectedGame!);
+      await provider.addAlarm(alarm);
+    }
     if (mounted) Navigator.pop(context);
   }
 
@@ -53,9 +72,9 @@ class _CreateAlarmScreenState extends State<CreateAlarmScreen> {
       backgroundColor: const Color(0xFF1A1A2E),
       appBar: AppBar(
         backgroundColor: const Color(0xFF16213E),
-        title: const Text(
-          'Nueva Alarma',
-          style: TextStyle(color: Colors.white),
+        title: Text(
+          _isEditing ? 'Editar Alarma' : 'Nueva Alarma',
+          style: const TextStyle(color: Colors.white),
         ),
         iconTheme: const IconThemeData(color: Colors.white),
       ),

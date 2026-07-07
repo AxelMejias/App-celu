@@ -78,4 +78,39 @@ void main() {
       expect(notifyCount, greaterThanOrEqualTo(1));
     });
   });
+
+  group('AlarmProvider — updateAlarm', () {
+    test('updates the alarm in place, keeping the same id', () async {
+      final provider = AlarmProvider();
+      final alarm = Alarm(
+        id: 'X',
+        time: const TimeOfDay(hour: 7, minute: 30),
+        game: 'pokemon',
+      );
+      await provider.addAlarm(alarm);
+      await provider.updateAlarm(
+        Alarm(id: 'X', time: const TimeOfDay(hour: 8, minute: 0), game: 'lol'),
+      );
+      expect(provider.alarms.length, 1);
+      expect(provider.alarms[0].id, 'X');
+      expect(provider.alarms[0].time.hour, 8);
+      expect(provider.alarms[0].game, 'lol');
+    });
+
+    test('notifies listeners after updateAlarm', () async {
+      final provider = AlarmProvider();
+      final alarm = Alarm(
+        id: 'Y',
+        time: const TimeOfDay(hour: 7, minute: 0),
+        game: 'pokemon',
+      );
+      await provider.addAlarm(alarm);
+      int notifyCount = 0;
+      provider.addListener(() => notifyCount++);
+      await provider.updateAlarm(
+        Alarm(id: 'Y', time: const TimeOfDay(hour: 9, minute: 0), game: 'lol'),
+      );
+      expect(notifyCount, greaterThanOrEqualTo(1));
+    });
+  });
 }

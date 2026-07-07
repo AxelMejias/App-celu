@@ -85,6 +85,14 @@ class _AlarmTile extends StatelessWidget {
     return ListTile(
       tileColor: const Color(0xFF16213E),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CreateAlarmScreen(existing: alarm),
+          ),
+        );
+      },
       leading: CircleAvatar(
         backgroundColor: gameColor.withValues(alpha: 0.2),
         child: Text(gameIcon, style: const TextStyle(fontSize: 20)),

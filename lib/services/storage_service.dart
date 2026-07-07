@@ -42,4 +42,15 @@ class StorageService {
     }
     await saveAlarms(alarms);
   }
+
+  /// Replaces the alarm with a matching id, preserving its position in the
+  /// persisted list. No-op if no alarm with that id exists.
+  Future<void> updateAlarm(Alarm alarm) async {
+    final alarms = await loadAlarms();
+    final index = alarms.indexWhere((a) => a.id == alarm.id);
+    if (index != -1) {
+      alarms[index] = alarm;
+    }
+    await saveAlarms(alarms);
+  }
 }

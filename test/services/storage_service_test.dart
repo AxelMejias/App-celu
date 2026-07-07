@@ -109,4 +109,41 @@ void main() {
       expect(loaded[0].isActive, isTrue);
     });
   });
+
+  group('StorageService — updateAlarm', () {
+    test('replaces the alarm by id, preserving list order', () async {
+      final a = Alarm(time: const TimeOfDay(hour: 7, minute: 0), game: 'pokemon');
+      final b = Alarm(time: const TimeOfDay(hour: 8, minute: 0), game: 'lol');
+      await svc.addAlarm(a);
+      await svc.addAlarm(b);
+      final updatedB = Alarm(
+        id: b.id,
+        time: const TimeOfDay(hour: 9, minute: 15),
+        game: 'valorant',
+      );
+      await svc.updateAlarm(updatedB);
+      final loaded = await svc.loadAlarms();
+      expect(loaded.length, 2);
+      expect(loaded[0].id, a.id);
+      expect(loaded[1].id, b.id);
+      expect(loaded[1].time.hour, 9);
+      expect(loaded[1].time.minute, 15);
+      expect(loaded[1].game, 'valorant');
+    });
+
+    test('non-existent id leaves the list unchanged', () async {
+      final a = Alarm(time: const TimeOfDay(hour: 7, minute: 0), game: 'pokemon');
+      await svc.addAlarm(a);
+      final ghost = Alarm(
+        id: 'does-not-exist',
+        time: const TimeOfDay(hour: 10, minute: 0),
+        game: 'lol',
+      );
+      await svc.updateAlarm(ghost);
+      final loaded = await svc.loadAlarms();
+      expect(loaded.length, 1);
+      expect(loaded[0].id, a.id);
+      expect(loaded[0].game, 'pokemon');
+    });
+  });
 }

@@ -21,8 +21,23 @@ class AlarmProvider extends ChangeNotifier {
   }
 
   Future<void> addAlarm(Alarm alarm) async {
+    await AlarmScheduler.requestPermissions();
     await _storage.addAlarm(alarm);
     if (alarm.isActive) await AlarmScheduler.scheduleAlarm(alarm);
+    _alarms = await _storage.loadAlarms();
+    notifyListeners();
+  }
+
+  /// Updates an existing alarm in place (matching by id, preserving list
+  /// position) and reschedules it: cancels the previously scheduled alarm
+  /// for that id, then schedules the updated alarm if it is active.
+  Future<void> updateAlarm(Alarm alarm) async {
+    await _storage.updateAlarm(alarm);
+    await AlarmScheduler.cancelAlarm(alarm.id);
+    if (alarm.isActive) {
+      await AlarmScheduler.requestPermissions();
+      await AlarmScheduler.scheduleAlarm(alarm);
+    }
     _alarms = await _storage.loadAlarms();
     notifyListeners();
   }
@@ -40,6 +55,7 @@ class AlarmProvider extends ChangeNotifier {
     if (idx != -1) {
       _alarms[idx].isActive = !_alarms[idx].isActive;
       if (_alarms[idx].isActive) {
+        await AlarmScheduler.requestPermissions();
         await AlarmScheduler.scheduleAlarm(_alarms[idx]);
       } else {
         await AlarmScheduler.cancelAlarm(id);

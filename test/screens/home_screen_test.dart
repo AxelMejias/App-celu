@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:levelup_alarm/providers/alarm_provider.dart';
 import 'package:levelup_alarm/models/alarm.dart';
 import 'package:levelup_alarm/screens/home_screen.dart';
+import 'package:levelup_alarm/screens/create_alarm_screen.dart';
 
 Widget _buildScreen(AlarmProvider provider) {
   return ChangeNotifierProvider<AlarmProvider>.value(
@@ -76,6 +77,62 @@ void main() {
       await tester.pumpWidget(_buildScreen(provider));
       await tester.pump();
       expect(find.text('🔴'), findsOneWidget);
+    });
+  });
+
+  group('HomeScreen — tap-to-edit', () {
+    testWidgets('tapping an alarm tile navigates to CreateAlarmScreen in edit mode',
+        (tester) async {
+      final provider = AlarmProvider();
+      final alarm = Alarm(
+        time: const TimeOfDay(hour: 7, minute: 30),
+        game: 'pokemon',
+      );
+      await provider.addAlarm(alarm);
+      await tester.pumpWidget(_buildScreen(provider));
+      await tester.pump();
+
+      await tester.tap(find.text('Pokémon'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(CreateAlarmScreen), findsOneWidget);
+      final screen = tester.widget<CreateAlarmScreen>(find.byType(CreateAlarmScreen));
+      expect(screen.existing?.id, alarm.id);
+    });
+
+    testWidgets('toggle switch still works and does not navigate', (tester) async {
+      final provider = AlarmProvider();
+      final alarm = Alarm(
+        time: const TimeOfDay(hour: 7, minute: 30),
+        game: 'pokemon',
+        isActive: true,
+      );
+      await provider.addAlarm(alarm);
+      await tester.pumpWidget(_buildScreen(provider));
+      await tester.pump();
+
+      await tester.tap(find.byType(Switch));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(CreateAlarmScreen), findsNothing);
+      expect(provider.alarms[0].isActive, isFalse);
+    });
+
+    testWidgets('delete button still works and does not navigate', (tester) async {
+      final provider = AlarmProvider();
+      final alarm = Alarm(
+        time: const TimeOfDay(hour: 7, minute: 30),
+        game: 'pokemon',
+      );
+      await provider.addAlarm(alarm);
+      await tester.pumpWidget(_buildScreen(provider));
+      await tester.pump();
+
+      await tester.tap(find.byIcon(Icons.delete_outline));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(CreateAlarmScreen), findsNothing);
+      expect(provider.alarms, isEmpty);
     });
   });
 }

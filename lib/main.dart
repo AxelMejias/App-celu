@@ -24,6 +24,7 @@ void main() async {
   } catch (_) {}
 
   await AlarmScheduler.initialize(navigatorKey);
+  await AlarmScheduler.requestPermissions();
 
   // Handle notification that launched the app while it was closed.
   String? launchGame;
