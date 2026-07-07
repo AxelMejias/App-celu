@@ -120,7 +120,7 @@ class AlarmScheduler {
     if (!Platform.isAndroid) return;
     try {
       final scheduled = nextFireTime(alarm.time, now: DateTime.now());
-      await AndroidAlarmManager.oneShotAt(
+      final ok = await AndroidAlarmManager.oneShotAt(
         scheduled,
         alarmId(alarm.id),
         alarmCallback,
@@ -129,14 +129,19 @@ class AlarmScheduler {
         rescheduleOnReboot: true,
         params: {'game': alarm.game, 'id': alarm.id},
       );
-    } catch (_) {}
+      debugPrint('AlarmScheduler.scheduleAlarm: oneShotAt -> $ok for $scheduled');
+    } catch (e) {
+      debugPrint('AlarmScheduler.scheduleAlarm FAILED: $e');
+    }
   }
 
   static Future<void> cancelAlarm(String id) async {
     if (!Platform.isAndroid) return;
     try {
       await AndroidAlarmManager.cancel(alarmId(id));
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('AlarmScheduler.cancelAlarm FAILED: $e');
+    }
   }
 
   // Exposed for unit testing.
