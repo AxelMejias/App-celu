@@ -3,6 +3,13 @@ import '../models/alarm.dart';
 import '../services/storage_service.dart';
 import '../services/alarm_scheduler.dart';
 
+/// Pure selection rule for the startup reconcile: which alarms need to be
+/// (re)scheduled when [AlarmProvider] loads. Only active alarms recur, so
+/// only active alarms are returned — order preserved. Testable without any
+/// platform channel.
+List<Alarm> alarmsToReschedule(List<Alarm> alarms) =>
+    alarms.where((a) => a.isActive).toList();
+
 class AlarmProvider extends ChangeNotifier {
   final StorageService _storage = StorageService();
   List<Alarm> _alarms = [];
@@ -16,6 +23,13 @@ class AlarmProvider extends ChangeNotifier {
   Future<void> _init() async {
     try {
       _alarms = await _storage.loadAlarms();
+      // Self-healing safety net: re-schedule every active alarm on load, so
+      // recurrence survives force-stop, a cleared alarm, or a failed
+      // callback re-schedule. Idempotent — scheduleAlarm replaces any
+      // pending alarm for the same id — and a no-op off Android.
+      for (final alarm in alarmsToReschedule(_alarms)) {
+        await AlarmScheduler.scheduleAlarm(alarm);
+      }
       notifyListeners();
     } catch (_) {}
   }

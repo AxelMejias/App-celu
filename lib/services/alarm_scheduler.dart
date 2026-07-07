@@ -26,6 +26,29 @@ DateTime nextFireTime(TimeOfDay time, {DateTime? now}) {
   return scheduled;
 }
 
+/// Pure builder for the `params` payload passed to
+/// `AndroidAlarmManager.oneShotAt`. Carries `game`, `id`, `hour` and
+/// `minute` so the background isolate ([alarmCallback]) can recompute the
+/// next fire time without access to the alarm list.
+Map<String, dynamic> buildAlarmParams(Alarm alarm) => {
+      'game': alarm.game,
+      'id': alarm.id,
+      'hour': alarm.time.hour,
+      'minute': alarm.time.minute,
+    };
+
+/// Pure parser: reconstructs the [TimeOfDay] a fired alarm's params carry,
+/// so [alarmCallback] can recompute the next fire time. Tolerant of a
+/// payload missing `hour`/`minute` (alarms scheduled by pre-recurrence
+/// code) — returns `null` rather than throwing so the caller can skip
+/// re-scheduling instead of crashing the callback isolate.
+TimeOfDay? timeFromParams(Map<String, dynamic>? params) {
+  final hour = params?['hour'] as int?;
+  final minute = params?['minute'] as int?;
+  if (hour == null || minute == null) return null;
+  return TimeOfDay(hour: hour, minute: minute);
+}
+
 // Runs in a background isolate — must be a top-level function.
 @pragma('vm:entry-point')
 Future<void> alarmCallback(int alarmId, Map<String, dynamic>? params) async {
@@ -64,6 +87,36 @@ Future<void> alarmCallback(int alarmId, Map<String, dynamic>? params) async {
     NotificationDetails(android: androidDetails),
     payload: game,
   );
+
+  // Re-arm the same alarm for tomorrow so it keeps recurring daily even if
+  // the app is never reopened. `alarmClock: true` is required to stay
+  // exempt from Doze (see AlarmScheduler.scheduleAlarm) — periodic alarms
+  // cannot request that exemption.
+  final nextTime = timeFromParams(params);
+  if (nextTime == null) {
+    debugPrint(
+      'alarmCallback: params missing hour/minute (pre-recurrence alarm), '
+      'skipping re-arm for OS alarm $alarmId. Startup reconcile will heal it.',
+    );
+    return;
+  }
+  final id = params!['id'] as String;
+  final next = nextFireTime(nextTime, now: DateTime.now());
+  try {
+    final ok = await AndroidAlarmManager.oneShotAt(
+      next,
+      AlarmScheduler.alarmId(id),
+      alarmCallback,
+      alarmClock: true,
+      wakeup: true,
+      exact: true,
+      rescheduleOnReboot: true,
+      params: params,
+    );
+    debugPrint('alarmCallback: re-armed for $id -> $next ($ok)');
+  } catch (e) {
+    debugPrint('alarmCallback: re-arm FAILED for $id: $e');
+  }
 }
 
 class AlarmScheduler {
@@ -131,7 +184,7 @@ class AlarmScheduler {
         wakeup: true,
         exact: true,
         rescheduleOnReboot: true,
-        params: {'game': alarm.game, 'id': alarm.id},
+        params: buildAlarmParams(alarm),
       );
       debugPrint('AlarmScheduler.scheduleAlarm: oneShotAt -> $ok for $scheduled');
     } catch (e) {
