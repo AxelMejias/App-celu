@@ -140,38 +140,41 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
     final bool buttonsEnabled = _answerState == _AnswerState.idle;
     final gameColor = gameThemes[_game]?.primaryColor;
 
-    return Scaffold(
-      backgroundColor: AppTheme.background,
-      appBar: AppBar(
-        backgroundColor: gameColor?.withValues(alpha: 0.85) ?? AppTheme.appBar,
-        automaticallyImplyLeading: false,
-        title: const Text(
-          'Quiz',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        backgroundColor: AppTheme.background,
+        appBar: AppBar(
+          backgroundColor: gameColor?.withValues(alpha: 0.85) ?? AppTheme.appBar,
+          automaticallyImplyLeading: false,
+          title: const Text(
+            'Quiz',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
         ),
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                question.text,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w600,
-                  height: 1.4,
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  question.text,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w600,
+                    height: 1.4,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
-              ),
-              const Spacer(),
-              ...List.generate(
-                question.options.length,
-                (i) => _buildAnswerButton(i, buttonsEnabled),
-              ),
-            ],
+                const Spacer(),
+                ...List.generate(
+                  question.options.length,
+                  (i) => _buildAnswerButton(i, buttonsEnabled),
+                ),
+              ],
+            ),
           ),
         ),
       ),

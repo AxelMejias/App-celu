@@ -5,6 +5,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'app.dart';
 import 'firebase_options.dart';
 import 'services/alarm_scheduler.dart';
+import 'services/alarm_sound_service.dart';
 
 final navigatorKey = GlobalKey<NavigatorState>();
 
@@ -22,6 +23,8 @@ void main() async {
   try {
     await AndroidAlarmManager.initialize();
   } catch (_) {}
+
+  alarmSound = RealAlarmSoundService.platform();
 
   await AlarmScheduler.initialize(navigatorKey);
   await AlarmScheduler.requestPermissions();

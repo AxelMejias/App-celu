@@ -1,11 +1,22 @@
 import 'dart:io';
+import 'dart:isolate';
+import 'dart:ui' show IsolateNameServer;
 import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../models/alarm.dart';
+import 'alarm_sound_service.dart';
 
 // Set during App initialization so the notification tap callback can navigate.
 GlobalKey<NavigatorState>? alarmNavigatorKey;
+
+/// Nombre del puerto por el que el isolate del alarm callback le avisa al
+/// isolate principal que una alarma disparó. El full-screen intent solo
+/// auto-lanza la app con la pantalla BLOQUEADA; si la app está viva en
+/// primer plano, este mensaje hace que la pantalla de alarma se superponga
+/// de inmediato (con sonido), sin esperar el tap en la notificación.
+const String alarmRingPortName = 'levelup_alarm_ring_port';
+ReceivePort? _ringPort;
 
 const _channelId = 'levelup_alarm_channel';
 const _channelName = 'Alarma LevelUp';
@@ -88,6 +99,15 @@ Future<void> alarmCallback(int alarmId, Map<String, dynamic>? params) async {
     payload: game,
   );
 
+  // Si el isolate principal está vivo (app en primer plano), avisale para
+  // que superponga la pantalla de alarma ya mismo — el full-screen intent
+  // solo auto-lanza con la pantalla bloqueada.
+  try {
+    IsolateNameServer.lookupPortByName(alarmRingPortName)?.send(game);
+  } catch (e) {
+    debugPrint('alarmCallback: ring-port send failed: $e');
+  }
+
   // Re-arm the same alarm for tomorrow so it keeps recurring daily even if
   // the app is never reopened. `alarmClock: true` is required to stay
   // exempt from Doze (see AlarmScheduler.scheduleAlarm) — periodic alarms
@@ -122,6 +142,18 @@ Future<void> alarmCallback(int alarmId, Map<String, dynamic>? params) async {
 class AlarmScheduler {
   static Future<void> initialize(GlobalKey<NavigatorState> navigatorKey) async {
     alarmNavigatorKey = navigatorKey;
+
+    // Puente background-isolate -> main-isolate: registrado antes que los
+    // plugins para que funcione también en tests (es dart:ui puro).
+    _ringPort?.close();
+    IsolateNameServer.removePortNameMapping(alarmRingPortName);
+    _ringPort = ReceivePort();
+    IsolateNameServer.registerPortWithName(_ringPort!.sendPort, alarmRingPortName);
+    _ringPort!.listen((message) {
+      final game = message as String? ?? 'pokemon';
+      _openAlarmFlow(game);
+    });
+
     try {
       final plugin = FlutterLocalNotificationsPlugin();
       const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -164,9 +196,15 @@ class AlarmScheduler {
   }
 
   static void _onNotificationTap(NotificationResponse response) {
-    final game = response.payload ?? 'pokemon';
-    alarmNavigatorKey?.currentState
-        ?.pushNamed('/alarm-ring', arguments: game);
+    _openAlarmFlow(response.payload ?? 'pokemon');
+  }
+
+  /// Superpone la pantalla de alarma, salvo que el flujo ya esté activo
+  /// (p. ej. el puerto ya la abrió y el usuario después tocó la
+  /// notificación) — `alarmSound.isRinging` es el indicador de flujo activo.
+  static void _openAlarmFlow(String game) {
+    if (alarmSound.isRinging) return;
+    alarmNavigatorKey?.currentState?.pushNamed('/alarm-ring', arguments: game);
   }
 
   static Future<void> scheduleAlarm(Alarm alarm) async {

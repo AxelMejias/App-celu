@@ -149,6 +149,22 @@ void main() {
       verify(() => mockProfileProvider.recordAnswer('pokemon', true)).called(1);
     });
 
+    testWidgets('blocks system back navigation (canPop is false)', (tester) async {
+      await tester.pumpWidget(
+        _wrap(const MaterialApp(home: QuizScreen())),
+      );
+      await tester.pump();
+
+      final popScope = tester.widget<PopScope>(find.byType(PopScope));
+      expect(popScope.canPop, isFalse);
+
+      // A back navigation attempt must not remove the screen.
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+
+      expect(find.byType(QuizScreen), findsOneWidget);
+    });
+
     testWidgets('respuesta incorrecta llama recordAnswer(game, false)', (tester) async {
       final mockProfileProvider = MockProfileProvider();
       when(() => mockProfileProvider.recordAnswer(any(), any())).thenAnswer((_) async {});

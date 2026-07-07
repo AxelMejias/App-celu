@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/alarm_sound_service.dart';
 import '../theme/app_theme.dart';
 
 class SuccessScreen extends StatefulWidget {
@@ -17,6 +18,7 @@ class _SuccessScreenState extends State<SuccessScreen>
   @override
   void initState() {
     super.initState();
+    alarmSound.stopRinging();
     _entryCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
