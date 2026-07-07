@@ -31,8 +31,10 @@ class FriendsService {
     required String fromUid,
     required String fromUsername,
     required String toUid,
+    String toUsername = '',
   }) async {
-    final request = FriendRequest(fromUid: fromUid, fromUsername: fromUsername, toUid: toUid);
+    final request = FriendRequest(
+        fromUid: fromUid, fromUsername: fromUsername, toUid: toUid, toUsername: toUsername);
     await _firestore
         .collection('friendRequests')
         .doc(requestId(fromUid, toUid))
@@ -44,8 +46,20 @@ class FriendsService {
 
   /// Pending friend requests addressed to [uid].
   Future<List<FriendRequest>> loadIncomingRequests(String uid) async {
+    return _loadRequestsWhere('toUid', uid);
+  }
+
+  /// Pending friend requests originated by [uid] (see C-17 design D-1).
+  /// Mirrors [loadIncomingRequests], filtering by `fromUid` instead of
+  /// `toUid`, so a sent request can be shown as "Enviada" even after the app
+  /// restarts (not only during the session it was sent in).
+  Future<List<FriendRequest>> loadSentRequests(String uid) async {
+    return _loadRequestsWhere('fromUid', uid);
+  }
+
+  Future<List<FriendRequest>> _loadRequestsWhere(String field, String value) async {
     final snapshot =
-        await _firestore.collection('friendRequests').where('toUid', isEqualTo: uid).get();
+        await _firestore.collection('friendRequests').where(field, isEqualTo: value).get();
 
     return snapshot.docs.map((doc) => FriendRequest.fromMap(doc.data())).toList();
   }

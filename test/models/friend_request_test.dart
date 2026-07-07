@@ -20,6 +20,28 @@ void main() {
       expect(result['status'], 'pending');
     });
 
+    test('round-trip preserva toUsername', () {
+      final request = FriendRequest.fromMap({
+        'fromUid': 'a',
+        'fromUsername': 'ash',
+        'toUid': 'b',
+        'toUsername': 'brock',
+      });
+
+      expect(request.toUsername, 'brock');
+      expect(request.toMap()['toUsername'], 'brock');
+    });
+
+    test('fromMap sin toUsername (docs viejos) cae a string vacío', () {
+      final request = FriendRequest.fromMap({
+        'fromUid': 'a',
+        'fromUsername': 'ash',
+        'toUid': 'b',
+      });
+
+      expect(request.toUsername, '');
+    });
+
     test('fromMap sin status cae a pending', () {
       final request = FriendRequest.fromMap({
         'fromUid': 'a',

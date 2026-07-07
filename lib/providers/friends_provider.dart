@@ -22,6 +22,7 @@ class FriendsProvider extends ChangeNotifier {
   List<UserSummary> _friends = [];
   List<FriendRequest> _incomingRequests = [];
   List<UserSummary> _searchResults = [];
+  List<FriendRequest> _sentRequests = [];
   final Set<String> _sentRequestUids = {};
   bool _isLoading = false;
   String? _errorMessage;
@@ -35,9 +36,17 @@ class FriendsProvider extends ChangeNotifier {
   List<FriendRequest> get incomingRequests => _incomingRequests;
   List<UserSummary> get searchResults => _searchResults;
 
-  /// Uids a los que ya se les envió una solicitud en esta sesión — la UI los
-  /// usa para dar feedback inmediato ("Enviada") sobre el resultado del tap.
-  Set<String> get sentRequestUids => _sentRequestUids;
+  /// Solicitudes enviadas pendientes, persistidas en Firestore y cargadas
+  /// vía `loadSentRequests()` (see C-17 design D-2).
+  List<FriendRequest> get sentRequests => _sentRequests;
+
+  /// Uids con una solicitud enviada pendiente: unión de lo persistido
+  /// (`sentRequests`, cargado desde Firestore) con lo agregado en esta
+  /// sesión por `sendRequest`, para que un usuario aparezca "Enviada" tanto
+  /// tras reiniciar la app como inmediatamente después de tocar "Agregar"
+  /// (see C-17 design D-2).
+  Set<String> get sentRequestUids =>
+      {..._sentRequests.map((r) => r.toUid), ..._sentRequestUids};
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
@@ -90,7 +99,7 @@ class FriendsProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> sendRequest(String targetUid) async {
+  Future<void> sendRequest(String targetUid, {String toUsername = ''}) async {
     final currentUid = uid;
     if (currentUid == null) return;
     if (targetUid == currentUid) return;
@@ -102,6 +111,7 @@ class FriendsProvider extends ChangeNotifier {
         fromUid: currentUid,
         fromUsername: username,
         toUid: targetUid,
+        toUsername: toUsername,
       );
       _sentRequestUids.add(targetUid);
       notifyListeners();
@@ -137,6 +147,39 @@ class FriendsProvider extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       _errorMessage = 'No se pudo rechazar la solicitud. Intentá de nuevo';
+      notifyListeners();
+    }
+  }
+
+  /// Loads the pending requests originated by the authenticated user (see
+  /// C-17 design D-2). No-op without an authenticated user.
+  Future<void> loadSentRequests() async {
+    final currentUid = uid;
+    if (currentUid == null) return;
+
+    try {
+      _sentRequests = await _friendsService.loadSentRequests(currentUid);
+      notifyListeners();
+    } catch (e) {
+      _errorMessage = 'No se pudieron cargar las solicitudes enviadas. Intentá de nuevo';
+      notifyListeners();
+    }
+  }
+
+  /// Cancels [request], a pending request originated by the authenticated
+  /// user: deletes its document (reusing `FriendsService.rejectRequest`, see
+  /// C-17 design D-4) and removes it from `sentRequests`/`sentRequestUids`.
+  /// No-op without an authenticated user.
+  Future<void> cancelSentRequest(FriendRequest request) async {
+    if (uid == null) return;
+
+    try {
+      await _friendsService.rejectRequest(request);
+      _sentRequests = _sentRequests.where((r) => r != request).toList();
+      _sentRequestUids.remove(request.toUid);
+      notifyListeners();
+    } catch (e) {
+      _errorMessage = 'No se pudo cancelar la solicitud. Intentá de nuevo';
       notifyListeners();
     }
   }

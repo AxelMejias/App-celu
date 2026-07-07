@@ -54,6 +54,7 @@ void main() {
             fromUid: 'u1',
             fromUsername: 'ash',
             toUid: 'u3',
+            toUsername: any(named: 'toUsername'),
           )).thenAnswer((_) async {});
       final provider = FriendsProvider(friendsService: mockService, uid: 'u1');
       var notified = false;
@@ -72,6 +73,7 @@ void main() {
             fromUid: any(named: 'fromUid'),
             fromUsername: any(named: 'fromUsername'),
             toUid: any(named: 'toUid'),
+            toUsername: any(named: 'toUsername'),
           )).thenThrow(Exception('boom'));
       final provider = FriendsProvider(friendsService: mockService, uid: 'u1');
 
@@ -125,13 +127,14 @@ void main() {
             fromUid: any(named: 'fromUid'),
             fromUsername: any(named: 'fromUsername'),
             toUid: any(named: 'toUid'),
+            toUsername: any(named: 'toUsername'),
           )).thenAnswer((_) async {});
       final provider = FriendsProvider(friendsService: mockService, uid: 'u1');
 
-      await provider.sendRequest('u2');
+      await provider.sendRequest('u2', toUsername: 'misty');
 
-      verify(() => mockService.sendRequest(fromUid: 'u1', fromUsername: 'ash', toUid: 'u2'))
-          .called(1);
+      verify(() => mockService.sendRequest(
+          fromUid: 'u1', fromUsername: 'ash', toUid: 'u2', toUsername: 'misty')).called(1);
     });
 
     test('con uid null es no-op (no llama al servicio)', () async {
@@ -156,6 +159,89 @@ void main() {
             fromUsername: any(named: 'fromUsername'),
             toUid: any(named: 'toUid'),
           ));
+    });
+  });
+
+  group('FriendsProvider.loadSentRequests', () {
+    test('popula sentRequests y agrega sus uids a sentRequestUids', () async {
+      when(() => mockService.loadSentRequests('u1')).thenAnswer(
+        (_) async => [
+          const FriendRequest(fromUid: 'u1', fromUsername: 'ash', toUid: 'u2'),
+        ],
+      );
+      final provider = FriendsProvider(friendsService: mockService, uid: 'u1');
+
+      await provider.loadSentRequests();
+
+      expect(provider.sentRequests, hasLength(1));
+      expect(provider.sentRequestUids, contains('u2'));
+    });
+
+    test('sentRequestUids incluye tanto lo persistido como lo enviado en la sesión', () async {
+      when(() => mockService.loadSentRequests('u1')).thenAnswer(
+        (_) async => [
+          const FriendRequest(fromUid: 'u1', fromUsername: 'ash', toUid: 'u2'),
+        ],
+      );
+      when(() => mockService.loadUsername('u1')).thenAnswer((_) async => 'ash');
+      when(() => mockService.sendRequest(
+            fromUid: any(named: 'fromUid'),
+            fromUsername: any(named: 'fromUsername'),
+            toUid: any(named: 'toUid'),
+            toUsername: any(named: 'toUsername'),
+          )).thenAnswer((_) async {});
+      final provider = FriendsProvider(friendsService: mockService, uid: 'u1');
+      await provider.loadSentRequests();
+
+      await provider.sendRequest('u3');
+
+      expect(provider.sentRequestUids, containsAll(['u2', 'u3']));
+    });
+
+    test('sin uid es no-op (no llama al servicio)', () async {
+      final provider = FriendsProvider(friendsService: mockService, uid: null);
+
+      await provider.loadSentRequests();
+
+      verifyNever(() => mockService.loadSentRequests(any()));
+    });
+
+    test('un fallo del servicio setea errorMessage', () async {
+      when(() => mockService.loadSentRequests('u1')).thenThrow(Exception('boom'));
+      final provider = FriendsProvider(friendsService: mockService, uid: 'u1');
+
+      await provider.loadSentRequests();
+
+      expect(provider.errorMessage, isNotNull);
+    });
+  });
+
+  group('FriendsProvider.cancelSentRequest', () {
+    test('borra la solicitud y la quita de sentRequests / sentRequestUids', () async {
+      const request = FriendRequest(fromUid: 'u1', fromUsername: 'ash', toUid: 'u2');
+      when(() => mockService.loadSentRequests('u1')).thenAnswer((_) async => [request]);
+      when(() => mockService.rejectRequest(any())).thenAnswer((_) async {});
+      final provider = FriendsProvider(friendsService: mockService, uid: 'u1');
+      await provider.loadSentRequests();
+
+      await provider.cancelSentRequest(request);
+
+      expect(provider.sentRequests, isEmpty);
+      expect(provider.sentRequestUids, isNot(contains('u2')));
+      verify(() => mockService.rejectRequest(request)).called(1);
+    });
+
+    test('un fallo del servicio setea errorMessage en español y conserva la solicitud', () async {
+      const request = FriendRequest(fromUid: 'u1', fromUsername: 'ash', toUid: 'u2');
+      when(() => mockService.loadSentRequests('u1')).thenAnswer((_) async => [request]);
+      when(() => mockService.rejectRequest(any())).thenThrow(Exception('boom'));
+      final provider = FriendsProvider(friendsService: mockService, uid: 'u1');
+      await provider.loadSentRequests();
+
+      await provider.cancelSentRequest(request);
+
+      expect(provider.errorMessage, isNotNull);
+      expect(provider.sentRequests, hasLength(1));
     });
   });
 

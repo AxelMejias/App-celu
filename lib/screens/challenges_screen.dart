@@ -32,6 +32,56 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
     final noChallenges =
         provider.incoming.isEmpty && provider.sent.isEmpty && provider.history.isEmpty;
 
+    Widget body;
+    if (provider.isLoading && noChallenges) {
+      body = ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: const [
+          Center(
+            heightFactor: 5,
+            child: CircularProgressIndicator(),
+          ),
+        ],
+      );
+    } else if (noChallenges) {
+      body = ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: const [
+          Center(
+            heightFactor: 5,
+            child: Text(
+              'No tenés desafíos todavía.',
+              style: TextStyle(color: Colors.white54),
+            ),
+          ),
+        ],
+      );
+    } else {
+      body = ListView(
+        padding: const EdgeInsets.all(24),
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          if (provider.incoming.isNotEmpty) ...[
+            _sectionTitle('Recibidos'),
+            const SizedBox(height: 8),
+            ...provider.incoming.map((c) => _incomingTile(context, c)),
+            const SizedBox(height: 24),
+          ],
+          if (provider.sent.isNotEmpty) ...[
+            _sectionTitle('Enviados'),
+            const SizedBox(height: 8),
+            ...provider.sent.map((c) => _sentTile(c)),
+            const SizedBox(height: 24),
+          ],
+          if (provider.history.isNotEmpty) ...[
+            _sectionTitle('Historial'),
+            const SizedBox(height: 8),
+            ...provider.history.map((c) => _historyTile(provider, c)),
+          ],
+        ],
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
@@ -42,35 +92,10 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
         ),
       ),
       body: SafeArea(
-        child: noChallenges
-            ? const Center(
-                child: Text(
-                  'No tenés desafíos todavía.',
-                  style: TextStyle(color: Colors.white54),
-                ),
-              )
-            : ListView(
-                padding: const EdgeInsets.all(24),
-                children: [
-                  if (provider.incoming.isNotEmpty) ...[
-                    _sectionTitle('Recibidos'),
-                    const SizedBox(height: 8),
-                    ...provider.incoming.map((c) => _incomingTile(context, c)),
-                    const SizedBox(height: 24),
-                  ],
-                  if (provider.sent.isNotEmpty) ...[
-                    _sectionTitle('Enviados'),
-                    const SizedBox(height: 8),
-                    ...provider.sent.map((c) => _sentTile(c)),
-                    const SizedBox(height: 24),
-                  ],
-                  if (provider.history.isNotEmpty) ...[
-                    _sectionTitle('Historial'),
-                    const SizedBox(height: 8),
-                    ...provider.history.map((c) => _historyTile(provider, c)),
-                  ],
-                ],
-              ),
+        child: RefreshIndicator(
+          onRefresh: () => context.read<ChallengesProvider>().loadAll(),
+          child: body,
+        ),
       ),
     );
   }

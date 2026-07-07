@@ -11,6 +11,7 @@ class FriendRequest {
     required this.fromUid,
     required this.fromUsername,
     required this.toUid,
+    this.toUsername = '',
     this.status = 'pending',
     this.createdAt,
   });
@@ -19,6 +20,9 @@ class FriendRequest {
         fromUid: map['fromUid'] as String? ?? '',
         fromUsername: map['fromUsername'] as String? ?? '',
         toUid: map['toUid'] as String? ?? '',
+        // Docs anteriores a C-17 no tienen toUsername — cae a '' y la UI
+        // muestra el uid como fallback.
+        toUsername: map['toUsername'] as String? ?? '',
         status: map['status'] as String? ?? 'pending',
         createdAt: _parseCreatedAt(map['createdAt']),
       );
@@ -39,6 +43,7 @@ class FriendRequest {
   final String fromUid;
   final String fromUsername;
   final String toUid;
+  final String toUsername;
   final String status;
   final DateTime? createdAt;
 
@@ -46,6 +51,7 @@ class FriendRequest {
         'fromUid': fromUid,
         'fromUsername': fromUsername,
         'toUid': toUid,
+        'toUsername': toUsername,
         'status': status,
       };
 
@@ -57,8 +63,9 @@ class FriendRequest {
           fromUid == other.fromUid &&
           fromUsername == other.fromUsername &&
           toUid == other.toUid &&
+          toUsername == other.toUsername &&
           status == other.status;
 
   @override
-  int get hashCode => Object.hash(fromUid, fromUsername, toUid, status);
+  int get hashCode => Object.hash(fromUid, fromUsername, toUid, toUsername, status);
 }

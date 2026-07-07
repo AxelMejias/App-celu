@@ -58,6 +58,17 @@ void main() {
       expect(doc.data()!['status'], 'pending');
     });
 
+    test('sendRequest persiste toUsername para mostrarlo en Solicitudes enviadas', () async {
+      await friendsService.sendRequest(
+          fromUid: 'a', fromUsername: 'ash', toUid: 'b', toUsername: 'misty');
+
+      final doc = await firestore.collection('friendRequests').doc('a_b').get();
+      expect(doc.data()!['toUsername'], 'misty');
+
+      final results = await friendsService.loadSentRequests('a');
+      expect(results.first.toUsername, 'misty');
+    });
+
     test('sendRequest dos veces es idempotente (un solo doc a_b)', () async {
       await friendsService.sendRequest(fromUid: 'a', fromUsername: 'ash', toUid: 'b');
       await friendsService.sendRequest(fromUid: 'a', fromUsername: 'ash', toUid: 'b');
@@ -81,6 +92,36 @@ void main() {
 
     test('sin solicitudes devuelve lista vacía', () async {
       final results = await friendsService.loadIncomingRequests('b');
+
+      expect(results, isEmpty);
+    });
+  });
+
+  group('FriendsService.loadSentRequests', () {
+    test('devuelve solo las solicitudes con fromUid == uid', () async {
+      await friendsService.sendRequest(fromUid: 'a', fromUsername: 'ash', toUid: 'b');
+      await friendsService.sendRequest(fromUid: 'c', fromUsername: 'gary', toUid: 'd');
+
+      final results = await friendsService.loadSentRequests('a');
+
+      expect(results, hasLength(1));
+      expect(results.first.fromUid, 'a');
+      expect(results.first.toUid, 'b');
+    });
+
+    test('ignora las solicitudes de otros emisores', () async {
+      await friendsService.sendRequest(fromUid: 'a', fromUsername: 'ash', toUid: 'b');
+      await friendsService.sendRequest(fromUid: 'c', fromUsername: 'gary', toUid: 'd');
+
+      final results = await friendsService.loadSentRequests('c');
+
+      expect(results, hasLength(1));
+      expect(results.first.fromUid, 'c');
+      expect(results.first.toUid, 'd');
+    });
+
+    test('sin solicitudes enviadas devuelve lista vacía', () async {
+      final results = await friendsService.loadSentRequests('a');
 
       expect(results, isEmpty);
     });
