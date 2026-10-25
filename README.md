@@ -1,86 +1,111 @@
 # LevelUp Alarm ⏰🎮
 
-Una alarma que no se apaga hasta que demuestres que estás despierto: para silenciarla tenés que responder correctamente una pregunta de trivia del videojuego que elijas.
+**An Android alarm that won't turn off until you prove you're awake: to silence it, you have to answer a trivia question about the video game you picked.**
 
-Además de las alarmas, incluye una capa social completa: cuentas de usuario, estadísticas en la nube, amigos y desafíos de trivia asincrónicos entre jugadores.
+On top of the alarms there is a full social layer: user accounts, cloud-synced stats, friends and asynchronous trivia challenges between players.
+
+> **Status:** in development. The core (alarms, trivia, accounts, friends and challenges) is implemented and covered by tests. I paused it to finish my degree thesis and I plan to continue. It is not published on any store; run it from source (see [Run it](#run-it)).
+>
+> *Resumen en español al final.*
 
 ## Screenshots
 
-| Perfil y estadísticas | Amigos | Desafíos | Nueva alarma |
-|:---:|:---:|:---:|:---:|
-| ![Perfil](docs/screenshots/profile.png) | ![Amigos](docs/screenshots/friends.png) | ![Desafíos](docs/screenshots/challenges.png) | ![Nueva alarma](docs/screenshots/create_alarm.png) |
+| Home | New alarm | Profile & stats | Friends | Challenges |
+|:---:|:---:|:---:|:---:|:---:|
+| ![Home](docs/screenshots/home.png) | ![New alarm](docs/screenshots/create_alarm.png) | ![Profile](docs/screenshots/profile.png) | ![Friends](docs/screenshots/friends.png) | ![Challenges](docs/screenshots/challenges.png) |
 
 ## Features
 
-**Alarmas con trivia**
-- Alarmas exactas que sobreviven reinicios del dispositivo (`android_alarm_manager_plus` + notificación full-screen)
-- Para apagar la alarma hay que responder bien una pregunta del juego elegido; si errás, viene otra pregunta
-- Banco de 103 preguntas de 6 juegos: Pokémon, League of Legends, Terraria, Valorant, Overwatch y Warframe
-- Tema visual propio por juego (colores, íconos)
+**Alarms with trivia**
+- Exact alarms that survive device reboots (`android_alarm_manager_plus` + full-screen notification).
+- To dismiss the alarm you must answer a question from the chosen game; if you get it wrong, you get another one.
+- 103 questions across 6 games: Pokémon, League of Legends, Terraria, Valorant, Overwatch and Warframe.
+- Each game has its own visual theme (colors, icons).
 
 **Social (Firebase)**
-- Registro e inicio de sesión con email/contraseña y Google Sign-In
-- Perfil con estadísticas por juego persistidas en Firestore: respondidas, correctas, racha actual y mejor racha
-- Sistema de amigos: búsqueda por username, solicitudes, y perfiles de amigos con sus estadísticas
-- Desafíos asincrónicos entre amigos: ambos responden el mismo set de preguntas congelado y gana quien acierte más
+- Email/password sign-up and login, plus Google Sign-In.
+- Profile with per-game stats stored in Firestore: answered, correct, current streak and best streak.
+- Friends system: search by username, friend requests, and friends' profiles with their stats.
+- Asynchronous challenges between friends: both answer the same frozen set of questions and whoever gets more right wins.
+
+## Technical decisions
+
+- **Alarms that fire while the phone sleeps.** Alarms are scheduled with `alarmClock: true` (Android's `setAlarmClock()`), which is exempt from Doze mode. With plain exact alarms (`setExact`), Android deferred the alarm when the screen was locked and the device was dozing, so it only rang once the phone was woken up.
+- **Recurring alarms.** Each alarm re-arms itself from its callback, and the app reconciles all scheduled alarms on startup, so a missed callback or a reboot doesn't lose them.
+- **Ringing experience.** Looping sound, wakelock and a full-screen screen over the lock screen, so the alarm can't be ignored.
+- **Fair challenges.** When a challenge is created, its questions are frozen in the document, so both players answer exactly the same set.
+- **Security rules.** Every Firestore request requires authentication, and writes are limited to the document owner or to the two participants of a friendship or challenge. Reads are open to any authenticated user (needed for username search). Tightening reads further is on the to-do list.
+- **Testable by design.** All access to Firebase and the platform sits behind injectable services, so the logic is tested with doubles and no real network.
 
 ## Stack
 
-| Capa | Tecnología |
+| Layer | Technology |
 |---|---|
-| UI | Flutter (Material 3, animaciones custom) |
-| Estado | `provider` (ChangeNotifier + ProxyProvider) |
-| Backend | Firebase Auth + Cloud Firestore (reglas de seguridad auth-scoped) |
-| Alarmas | `android_alarm_manager_plus`, `flutter_local_notifications` (full-screen intent) |
-| Persistencia local | `shared_preferences` |
-| Tests | `flutter_test`, `mocktail`, `fake_cloud_firestore` — **185+ tests** |
+| UI | Flutter (Material 3, custom animations) |
+| State | `provider` (ChangeNotifier + ProxyProvider) |
+| Backend | Firebase Auth + Cloud Firestore (auth-required security rules) |
+| Alarms | `android_alarm_manager_plus`, `flutter_local_notifications` (full-screen intent) |
+| Local storage | `shared_preferences` |
+| Tests | `flutter_test`, `mocktail`, `fake_cloud_firestore`: 200+ automated tests |
 
-## Arquitectura
+## Architecture
 
 ```
 lib/
-├── models/      # Entidades puras (Alarm, Question, GameStats, Challenge, ...)
-├── services/    # Acceso a plataforma y datos (AuthService, ProfileService,
+├── models/      # Plain entities (Alarm, Question, GameStats, Challenge, ...)
+├── services/    # Platform and data access (AuthService, ProfileService,
 │                #   FriendsService, ChallengeService, AlarmScheduler, ...)
-├── providers/   # Estado observable (AuthProvider, AlarmProvider, ...)
-├── screens/     # UI por pantalla
-├── widgets/     # Componentes reutilizables (AuthGate, AnswerButton, ...)
-├── data/        # Banco de preguntas por juego
-└── theme/       # AppTheme + GameTheme por juego
+├── providers/   # Observable state (AuthProvider, AlarmProvider, ...)
+├── screens/     # One UI file per screen
+├── widgets/     # Reusable components (AuthGate, AnswerButton, ...)
+├── data/        # Question bank per game
+└── theme/       # AppTheme + a GameTheme per game
 ```
 
-Principios que sigue el proyecto:
+Principles the project follows:
 
-- **Servicios inyectables**: todo acceso a Firebase/plataforma está detrás de una clase inyectable, así la lógica se testea con dobles (`mocktail`, `fake_cloud_firestore`) sin tocar servicios reales.
-- **Modelos libres de infraestructura**: las entidades no importan Firestore; la (de)serialización vive en los servicios.
-- **TDD estricto**: cada feature se desarrolló con ciclo RED → GREEN → REFACTOR; la suite corre completa en segundos.
-- **Spec-driven development**: cada cambio nace de una propuesta con specs y tareas antes de escribir código.
+- **Injectable services:** all Firebase/platform access lives behind a class that can be replaced in tests (`mocktail`, `fake_cloud_firestore`).
+- **Infrastructure-free models:** entities don't import Firestore; (de)serialization lives in the services.
+- **Strict TDD:** each feature was built with RED → GREEN → REFACTOR, and the full suite runs in seconds.
+- **Spec-driven development:** every change starts from a proposal with specs and tasks before any code is written.
 
-## Cómo correrlo
+## Run it
 
-Requisitos: Flutter SDK, Android SDK (minSdk 26), y un proyecto de Firebase propio.
+Requirements: Flutter SDK, Android SDK (minSdk 26) and your own Firebase project.
 
 ```bash
-git clone https://github.com/AxelMejias/App-celu.git
-cd App-celu
+git clone https://github.com/AxelMejias/LevelUp-Alarm.git
+cd LevelUp-Alarm
 flutter pub get
 
-# Configurar Firebase (genera lib/firebase_options.dart y google-services.json)
+# Configure Firebase (generates lib/firebase_options.dart and google-services.json)
 dart pub global activate flutterfire_cli
 flutterfire configure
 
 flutter run
 ```
 
-> `android/app/google-services.json` no está en el repo — cada quien usa su propio proyecto de Firebase. En Firebase Console hay que habilitar **Authentication** (Email/Password y Google) y **Cloud Firestore**. Las reglas de seguridad están en [`firestore.rules`](firestore.rules) y se despliegan con `firebase deploy --only firestore:rules`.
+> `android/app/google-services.json` is not in the repo: everyone uses their own Firebase project. In the Firebase console enable **Authentication** (Email/Password and Google) and **Cloud Firestore**. The security rules are in [`firestore.rules`](firestore.rules) and are deployed with `firebase deploy --only firestore:rules`.
 
 ## Tests
 
 ```bash
-flutter test      # suite completa
-flutter analyze   # cero warnings
+flutter test      # full suite
+flutter analyze   # zero warnings
 ```
+
+## Roadmap
+
+- Tighten Firestore read rules for friend requests and challenges.
+- More question banks and more games.
+- Publish a first test build.
 
 ---
 
-Hecho por [Axel Mejias](https://github.com/AxelMejias) 🇦🇷
+## Resumen en español
+
+LevelUp Alarm es una app Android hecha con Flutter y Firebase: una alarma que no se apaga hasta que respondés bien una pregunta de trivia del videojuego que elegiste. Incluye cuentas de usuario, estadísticas en la nube, amigos y desafíos asincrónicos. Las alarmas se programan con `alarmClock` para que suenen aunque el teléfono esté dormido, y la lógica está cubierta por más de 200 tests con servicios inyectables y TDD. **Estado:** en desarrollo; la pausé para terminar la tesis y pienso retomarla.
+
+---
+
+Made by [Axel Mejías](https://github.com/AxelMejias) 🇦🇷
